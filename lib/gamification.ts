@@ -231,3 +231,88 @@ export function calculateStreak(reports: Array<{ date: string }>): {
   
   return { currentStreak, longestStreak };
 }
+
+// ユーザーのバッジ獲得情報
+export interface UserBadge {
+  badgeId: string;
+  earnedAt: Timestamp;
+  isNew?: boolean; // 新規獲得フラグ
+}
+
+// バッジ自動付与：報告時に呼び出す
+export function checkAndAwardBadges(
+  currentBadges: UserBadge[],
+  userData: {
+    totalViews: number;
+    totalReports: number;
+    currentStreak: number;
+    weeklyAchievementRate?: number;
+    weeklyRank?: number;
+    monthlyRank?: number;
+    growthRate?: number;
+    previousWeekViews?: number;
+    currentWeekViews?: number;
+  }
+): {
+  newBadges: UserBadge[];
+  allBadges: UserBadge[];
+} {
+  const currentBadgeIds = currentBadges.map(b => b.badgeId);
+  const newBadges: UserBadge[] = [];
+  
+  // 全バッジをチェック
+  for (const badge of BADGES) {
+    // 既に獲得済みならスキップ
+    if (currentBadgeIds.includes(badge.id)) {
+      continue;
+    }
+    
+    // 条件チェック
+    const isEligible = checkBadgeEligibility(badge.id, userData);
+    
+    if (isEligible) {
+      const newBadge: UserBadge = {
+        badgeId: badge.id,
+        earnedAt: Timestamp.now(),
+        isNew: true,
+      };
+      newBadges.push(newBadge);
+    }
+  }
+  
+  return {
+    newBadges,
+    allBadges: [...currentBadges, ...newBadges],
+  };
+}
+
+// 週間の前週比成長率を計算
+export function calculateWeeklyGrowthRate(
+  currentWeekViews: number,
+  previousWeekViews: number
+): number {
+  if (previousWeekViews === 0) {
+    return currentWeekViews > 0 ? 100 : 0;
+  }
+  return Math.round((currentWeekViews / previousWeekViews) * 100);
+}
+
+// バッジ獲得通知メッセージ生成
+export function getBadgeAwardMessage(badge: Badge): string {
+  const messages: Record<string, string> = {
+    firstReport: "🎉 おめでとう！初めての報告を達成しました！",
+    streak7: "🔥 7日連続報告達成！継続は力なり！",
+    streak30: "💪 30日連続！鉄の意志で突き進む！",
+    streak100: "⚡ 100日連続達成！不屈の精神の持ち主！",
+    firstViral: "🚀 初の1万再生達成！ブレイクスルー！",
+    viral10k: "💥 10万再生達成！バズマスターの称号を獲得！",
+    complete100: "🎯 週間目標100%達成！完璧です！",
+    top3weekly: "🥇 週間TOP3入り！トップランナーの仲間入り！",
+    mvp: "👑 月間1位獲得！MVPおめでとう！",
+    growth2x: "📈 前週比2倍達成！急成長中！",
+    growth5x: "🌟 前週比5倍達成！爆発的成長！",
+    teamPlayer: "🤝 チーム貢献！素晴らしいチームプレイ！",
+  };
+  
+  return messages[badge.id] || `🎊 「${badge.name}」バッジ獲得！`;
+}

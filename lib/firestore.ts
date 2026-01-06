@@ -5,6 +5,7 @@ import {
   orderBy, 
   onSnapshot,
   getDocs,
+  getDoc,
   deleteDoc,
   doc,
   setDoc,
@@ -358,4 +359,139 @@ export async function updateUserStatus(
 // ユーザーの役割を更新
 export async function updateUserRole(userId: string, role: "member" | "admin"): Promise<void> {
   await setDoc(doc(db, "users", userId), { role }, { merge: true });
+}
+
+// バッジ管理機能
+import { UserBadge } from "./gamification";
+
+// ユーザーのバッジを取得
+export async function getUserBadges(userId: string): Promise<UserBadge[]> {
+  try {
+    const userDoc = await getDoc(doc(db, "users", userId));
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      return (data.badges || []) as UserBadge[];
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching user badges:", error);
+    return [];
+  }
+}
+
+// ユーザーのバッジを更新（新規バッジを追加）
+export async function updateUserBadges(userId: string, badges: UserBadge[]): Promise<void> {
+  await setDoc(doc(db, "users", userId), { badges }, { merge: true });
+}
+
+// ユーザーの統計情報を取得（バッジ判定用）
+export async function getUserStats(userId: string): Promise<{
+  totalViews: number;
+  totalReports: number;
+  currentStreak: number;
+  weeklyViews: number;
+  previousWeekViews: number;
+}> {
+  try {
+    // ユーザーの全レポートを取得
+    const q = query(
+      collection(db, "reports"),
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc")
+    );
+    
+    const snapshot = await getDocs(q);
+    const reports: Report[] = [];
+    snapshot.forEach((doc) => {
+      reports.push({ id: doc.id, ...doc.data() } as Report);
+    });
+    
+    // 統計計算
+    let totalViews = 0;
+    let weeklyViews = 0;
+    let previousWeekViews = 0;
+    
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+    const prevWeekStart = new Date(now);
+    prevWeekStart.setDate(now.getDate() - 14);
+    
+    reports.forEach(report => {
+      const views = report.igViews || 0;
+      totalViews += views;
+      
+      const reportDate = report.createdAt?.toDate?.() || new Date(report.date);
+      
+      if (reportDate >= weekStart) {
+        weeklyViews += views;
+      } else if (reportDate >= prevWeekStart && reportDate < weekStart) {
+        previousWeekViews += views;
+      }
+    });
+    
+    // ストリーク計算
+    const { currentStreak } = calculateStreak(reports);
+    
+    return {
+      totalViews,
+      totalReports: reports.length,
+      currentStreak,
+      weeklyViews,
+      previousWeekViews,
+    };
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    return {
+      totalViews: 0,
+      totalReports: 0,
+      currentStreak: 0,
+      weeklyViews: 0,
+      previousWeekViews: 0,
+    };
+  }
+}
+
+// ストリーク計算のインポート
+function calculateStreak(reports: Report[]): { currentStreak: number; longestStreak: number } {
+  if (reports.length === 0) {
+    return { currentStreak: 0, longestStreak: 0 };
+  }
+  
+  const sortedReports = [...reports].sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let tempStreak = 0;
+  let expectedDate = new Date(today);
+  
+  for (const report of sortedReports) {
+    const reportDate = new Date(report.date);
+    reportDate.setHours(0, 0, 0, 0);
+    
+    if (reportDate.getTime() === expectedDate.getTime()) {
+      tempStreak++;
+      if (currentStreak === 0 || tempStreak === currentStreak + 1) {
+        currentStreak = tempStreak;
+      }
+      longestStreak = Math.max(longestStreak, tempStreak);
+      expectedDate.setDate(expectedDate.getDate() - 1);
+    } else if (reportDate < expectedDate) {
+      if (currentStreak === 0) {
+        currentStreak = 0;
+      }
+      tempStreak = 1;
+      expectedDate = new Date(reportDate);
+      expectedDate.setDate(expectedDate.getDate() - 1);
+    }
+  }
+  
+  longestStreak = Math.max(longestStreak, tempStreak);
+  
+  return { currentStreak, longestStreak };
 }
