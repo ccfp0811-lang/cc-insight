@@ -54,13 +54,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{
-                duration: 0.25,
-                ease: [0.4, 0.0, 0.2, 1],
+                duration: 0.15,
+                ease: "easeOut",
               }}
+              style={{ willChange: "opacity" }}
             >
               {children}
             </motion.div>
@@ -114,28 +115,24 @@ function BottomNavigation() {
             <motion.button
               key={item.href}
               onClick={() => router.push(item.href)}
-              whileTap={{ scale: 0.85 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.1 }}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 px-4 py-2",
                 isActive ? "text-pink-500" : "text-gray-400"
               )}
+              style={{ willChange: "transform" }}
             >
-              <motion.div
-                animate={isActive ? { scale: [1, 1.2, 1] } : {}}
-                transition={{ duration: 0.3 }}
-              >
-                <Icon
-                  className={cn(
-                    "w-6 h-6 transition-all",
-                    isActive && "drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]"
-                  )}
-                />
-              </motion.div>
+              <Icon
+                className={cn(
+                  "w-6 h-6",
+                  isActive && "drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]"
+                )}
+              />
               <span
                 className={cn(
-                  "text-xs font-medium transition-all",
-                  isActive && "text-pink-500 drop-shadow-[0_0_4px_rgba(236,72,153,0.6)]"
+                  "text-xs font-medium",
+                  isActive && "text-pink-500"
                 )}
               >
                 {item.label}
