@@ -46,8 +46,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // ルート定義
 const publicRoutes = ["/login", "/register", "/report", "/verify-email"];
 const pendingAllowedRoutes = ["/pending-approval", "/verify-email"];
-const adminRoutes = ["/admin"];
-const memberRoutes = ["/dashboard", "/ranking", "/mypage", "/team"];
+const adminOnlyRoutes = ["/admin", "/dashboard"]; // 管理者専用
+const memberRoutes = ["/mypage", "/ranking"]; // メンバー専用
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserProfile(null);
         // 未認証で保護ルートにアクセス
-        const isProtectedRoute = [...memberRoutes, ...adminRoutes].some(route => 
+        const isProtectedRoute = [...memberRoutes, ...adminOnlyRoutes].some(route => 
           pathname.startsWith(route)
         );
         if (isProtectedRoute) {
@@ -187,7 +187,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await signOut(auth);
         throw new Error("アカウントが停止されています。管理者にお問い合わせください。");
       } else {
-        router.push("/dashboard");
+        // 役割に応じてリダイレクト先を分岐
+        if (profile?.role === "admin") {
+          router.push("/dashboard"); // 管理者 → ダッシュボード
+        } else {
+          router.push("/mypage"); // メンバー → マイページ
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -249,7 +254,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
     const isPendingAllowed = pendingAllowedRoutes.includes(pathname);
-    const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
+    const isAdminRoute = adminOnlyRoutes.some(route => pathname.startsWith(route));
     const isMemberRoute = memberRoutes.some(route => pathname.startsWith(route));
 
     // 未認証で保護ルート
