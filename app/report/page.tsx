@@ -86,41 +86,45 @@ export default function ReportPage() {
     setError("");
     setSuccess(false);
 
+    // タイムアウト用Promise
+    const timeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("タイムアウト: 10秒以内に応答がありませんでした")), 10000)
+    );
+
     try {
-      if (isXTeam) {
-        // X運用チーム用データ
-        await addDoc(collection(db, "reports"), {
-          team: selectedTeam,
-          teamType: "x",
-          name: name.trim(),
-          date: date,
-          postCount: parseInt(xPostCount) || 0,
-          postUrls: xPostUrls.filter(url => url.trim() !== ""),
-          likeCount: parseInt(xLikeCount) || 0,
-          replyCount: parseInt(xReplyCount) || 0,
-          todayComment: xTodayComment,
-          createdAt: serverTimestamp(),
-        });
-      } else {
-        // Shorts系チーム用データ
-        await addDoc(collection(db, "reports"), {
-          team: selectedTeam,
-          teamType: "shorts",
-          name: name.trim(),
-          date: date,
-          accountId: accountId,
-          igViews: parseInt(igViews) || 0,
-          igProfileAccess: parseInt(igProfileAccess) || 0,
-          igExternalTaps: parseInt(igExternalTaps) || 0,
-          igInteractions: parseInt(igInteractions) || 0,
-          weeklyStories: parseInt(weeklyStories) || 0,
-          igFollowers: parseInt(igFollowers) || 0,
-          ytFollowers: parseInt(ytFollowers) || 0,
-          tiktokFollowers: parseInt(tiktokFollowers) || 0,
-          todayComment: todayComment,
-          createdAt: serverTimestamp(),
-        });
-      }
+      const reportData = isXTeam ? {
+        team: selectedTeam,
+        teamType: "x",
+        name: name.trim(),
+        date: date,
+        postCount: parseInt(xPostCount) || 0,
+        postUrls: xPostUrls.filter(url => url.trim() !== ""),
+        likeCount: parseInt(xLikeCount) || 0,
+        replyCount: parseInt(xReplyCount) || 0,
+        todayComment: xTodayComment,
+        createdAt: serverTimestamp(),
+      } : {
+        team: selectedTeam,
+        teamType: "shorts",
+        name: name.trim(),
+        date: date,
+        accountId: accountId,
+        igViews: parseInt(igViews) || 0,
+        igProfileAccess: parseInt(igProfileAccess) || 0,
+        igExternalTaps: parseInt(igExternalTaps) || 0,
+        igInteractions: parseInt(igInteractions) || 0,
+        weeklyStories: parseInt(weeklyStories) || 0,
+        igFollowers: parseInt(igFollowers) || 0,
+        ytFollowers: parseInt(ytFollowers) || 0,
+        tiktokFollowers: parseInt(tiktokFollowers) || 0,
+        todayComment: todayComment,
+        createdAt: serverTimestamp(),
+      };
+
+      await Promise.race([
+        addDoc(collection(db, "reports"), reportData),
+        timeout
+      ]);
 
       setSuccess(true);
       // フォームリセット
