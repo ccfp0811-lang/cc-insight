@@ -24,6 +24,8 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true);
   const [totalViews, setTotalViews] = useState(0);
   const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0 });
+  const [teamRanking, setTeamRanking] = useState<any[]>([]);
+  const [myRank, setMyRank] = useState<number>(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,12 +52,29 @@ export default function MyPage() {
         const myWeeklyReports = weeklyReports.filter(r => r.userEmail === user.email);
         setReports(myWeeklyReports);
 
-        // 週次統計
+        // 週次統計とチーム内ランキング
         const team = teams.find(t => t.id === userProfile.team);
         if (team) {
           const stats = calculateTeamStats(weeklyReports, userProfile.team);
           const myStats = stats.members.find((m: any) => m.name === userProfile.displayName);
           setWeeklyStats(myStats || { views: 0, posts: 0, achievementRate: 0 });
+          
+          // チーム内ランキング（今週の再生数順、TOP5）
+          const ranking = stats.members
+            .sort((a: any, b: any) => b.views - a.views)
+            .slice(0, 5)
+            .map((member: any, index: number) => ({
+              ...member,
+              rank: index + 1,
+              isMe: member.name === userProfile.displayName
+            }));
+          setTeamRanking(ranking);
+          
+          // 自分の順位を取得
+          const myRankIndex = stats.members
+            .sort((a: any, b: any) => b.views - a.views)
+            .findIndex((m: any) => m.name === userProfile.displayName);
+          setMyRank(myRankIndex + 1);
         }
 
         // ストリーク計算
@@ -235,6 +254,111 @@ export default function MyPage() {
           <div></div>
         </GlassCard>
       </div>
+
+      {/* チーム内ランキング */}
+      {teamRanking.length > 0 && (
+        <GlassCard glowColor="#f59e0b" className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="text-2xl">🏆</div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold">チーム内ランキング</h3>
+              <p className="text-sm text-muted-foreground">
+                {teams.find(t => t.id === userProfile?.team)?.name} - 今週の再生数TOP5
+              </p>
+            </div>
+            {myRank > 0 && (
+              <div className="text-right">
+                <div className="text-sm text-muted-foreground">あなたの順位</div>
+                <div className="text-2xl font-bold text-yellow-500">#{myRank}</div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            {teamRanking.map((member) => {
+              const isTopThree = member.rank <= 3;
+              const medalEmoji = member.rank === 1 ? "🥇" : member.rank === 2 ? "🥈" : member.rank === 3 ? "🥉" : "";
+              
+              return (
+                <div
+                  key={member.name}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    member.isMe
+                      ? "bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/50 shadow-[0_0_20px_rgba(234,179,8,0.3)]"
+                      : isTopThree
+                      ? "bg-white/10 border-white/20"
+                      : "bg-white/5 border-white/10"
+                  } hover:scale-[1.02]`}
+                >
+                  <div className="flex items-center gap-4">
+                    {/* 順位 */}
+                    <div className="flex-shrink-0 w-12 text-center">
+                      {medalEmoji ? (
+                        <div className="text-3xl">{medalEmoji}</div>
+                      ) : (
+                        <div className="text-2xl font-bold text-muted-foreground">
+                          #{member.rank}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 名前 */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-lg">{member.name}</p>
+                        {member.isMe && (
+                          <span className="px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold">
+                            YOU
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {member.posts} 投稿
+                      </p>
+                    </div>
+
+                    {/* 再生数 */}
+                    <div className="text-right">
+                      <div className="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                        {member.views.toLocaleString()}
+                      </div>
+                      <p className="text-xs text-muted-foreground">views</p>
+                    </div>
+                  </div>
+
+                  {/* プログレスバー（TOP3のみ） */}
+                  {isTopThree && (
+                    <div className="mt-3">
+                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min((member.views / teamRanking[0].views) * 100, 100)}%`,
+                            boxShadow: "0 0 10px rgba(234,179,8,0.5)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 全体ランキングへのリンク */}
+          <div className="mt-6 text-center">
+            <Link href="/ranking">
+              <Button
+                variant="outline"
+                className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                全体ランキングを見る
+              </Button>
+            </Link>
+          </div>
+        </GlassCard>
+      )}
 
       {/* バッジコレクション */}
       <GlassCard glowColor="#a855f7" className="p-6">
