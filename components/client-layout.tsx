@@ -7,7 +7,6 @@ import { LogOut, Home, ClipboardList, Trophy } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 
 // 完全公開ページ（認証不要・サイドバー非表示・ボトムナビ非表示）
 const publicPages = ["/login", "/register", "/verify-email", "/pending-approval", "/admin/login"];
@@ -49,23 +48,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* メインコンテンツ */}
-        <main className="flex-1 md:ml-64 pb-20 md:pb-8 p-4 md:p-8 pt-[env(safe-area-inset-top,1rem)] w-full overflow-hidden">
+        <main className="flex-1 md:ml-64 pb-20 md:pb-8 p-4 md:p-8 pt-[env(safe-area-inset-top,1rem)] w-full">
           <LogoutButton />
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{
-                duration: 0.15,
-                ease: "easeOut",
-              }}
-              style={{ willChange: "opacity" }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          {children}
         </main>
 
         {/* ボトムナビゲーション（モバイルのみ） */}
@@ -112,16 +97,13 @@ function BottomNavigation() {
           const Icon = item.icon;
           
           return (
-            <motion.button
+            <button
               key={item.href}
               onClick={() => router.push(item.href)}
-              whileTap={{ scale: 0.9 }}
-              transition={{ duration: 0.1 }}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-4 py-2",
+                "flex flex-col items-center justify-center gap-1 px-4 py-2 transition-transform duration-100 active:scale-95",
                 isActive ? "text-pink-500" : "text-gray-400"
               )}
-              style={{ willChange: "transform" }}
             >
               <Icon
                 className={cn(
@@ -137,7 +119,7 @@ function BottomNavigation() {
               >
                 {item.label}
               </span>
-            </motion.button>
+            </button>
           );
         })}
       </div>
