@@ -170,29 +170,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const loggedInUser = userCredential.user;
 
+      // プロファイル取得
+      const profile = await fetchUserProfile(loggedInUser.uid);
+      
+      // Firestoreにユーザードキュメントが存在しない場合
+      if (!profile) {
+        await signOut(auth);
+        throw new Error("ユーザー情報が見つかりません。管理者にお問い合わせください。");
+      }
+
       // 最終ログイン時刻を更新
       await setDoc(doc(db, "users", loggedInUser.uid), {
         lastLoginAt: serverTimestamp(),
         emailVerified: loggedInUser.emailVerified,
       }, { merge: true });
-
-      // プロファイル取得
-      const profile = await fetchUserProfile(loggedInUser.uid);
       
       if (!loggedInUser.emailVerified) {
         router.push("/verify-email");
-      } else if (profile?.status === "pending") {
+      } else if (profile.status === "pending") {
         router.push("/pending-approval");
-      } else if (profile?.status === "suspended") {
+      } else if (profile.status === "suspended") {
         await signOut(auth);
         throw new Error("アカウントが停止されています。管理者にお問い合わせください。");
-      } else {
+      } else if (profile.status === "approved") {
         // 役割に応じてリダイレクト先を分岐
-        if (profile?.role === "admin") {
+        if (profile.role === "admin") {
           router.push("/dashboard"); // 管理者 → ダッシュボード
         } else {
           router.push("/mypage"); // メンバー → マイページ
         }
+      } else {
+        await signOut(auth);
+        throw new Error("アカウントの状態が不正です。管理者にお問い合わせください。");
       }
     } catch (error) {
       console.error("Login error:", error);
