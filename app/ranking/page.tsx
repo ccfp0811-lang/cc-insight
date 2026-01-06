@@ -6,6 +6,7 @@ import { Trophy, Eye, MessageCircle, Loader2, Crown, Medal, Award } from "lucide
 import { subscribeToReports, calculateRankings, Report } from "@/lib/firestore";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
+import { getTeamType, getGuardianStage, type TeamType } from "@/lib/guardian-system";
 
 const rankingTypes = [
   { id: "views", label: "再生数", icon: Eye },
@@ -209,6 +210,12 @@ export default function RankingPage() {
           {rankings.slice(0, 3).map((member: any, index: number) => {
             const rank = index + 1;
             const style = getRankStyle(rank, teamColor);
+            
+            // ガーディアンStage計算
+            const teamType = getTeamType(member.team);
+            const totalValue = rankingType === "views" ? member.views : member.views;
+            const guardianStage = getGuardianStage(totalValue, teamType);
+            
             return (
               <div
                 key={`${member.team}-${member.name}`}
@@ -218,6 +225,31 @@ export default function RankingPage() {
                 {/* Medal Icon */}
                 <div className="flex items-center justify-center mb-4">
                   {getMedalIcon(rank)}
+                </div>
+
+                {/* Guardian Avatar */}
+                <div className="flex justify-center mb-4">
+                  <div 
+                    className="w-20 h-20 rounded-full flex items-center justify-center text-5xl relative"
+                    style={{
+                      backgroundColor: `${guardianStage.color}20`,
+                      boxShadow: `0 0 30px ${guardianStage.glowColor}, inset 0 0 15px ${guardianStage.glowColor}`,
+                      border: `3px solid ${guardianStage.color}`,
+                    }}
+                  >
+                    {guardianStage.emoji}
+                    {guardianStage.stage === 5 && (
+                      <span className="absolute -top-2 -right-2 text-2xl animate-pulse">👑</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Guardian Stage */}
+                <div className="text-center mb-4">
+                  <p className="text-xs text-slate-500 mb-1">Stage {guardianStage.stage}</p>
+                  <p className="text-sm font-bold" style={{ color: guardianStage.color }}>
+                    {guardianStage.japaneseName}
+                  </p>
                 </div>
 
                 {/* Member Info */}
@@ -264,6 +296,12 @@ export default function RankingPage() {
           <div className="space-y-3">
             {rankings.slice(3).map((member: any, index: number) => {
               const rank = index + 4;
+              
+              // ガーディアンStage計算
+              const teamType = getTeamType(member.team);
+              const totalValue = rankingType === "views" ? member.views : member.views;
+              const guardianStage = getGuardianStage(totalValue, teamType);
+              
               return (
                 <div
                   key={`${member.team}-${member.name}`}
@@ -273,18 +311,38 @@ export default function RankingPage() {
                     <span className="text-lg font-bold text-slate-400 w-8">
                       #{rank}
                     </span>
-                    <div
-                      className="w-1 h-10 rounded-full"
+                    
+                    {/* Guardian Avatar (Small) */}
+                    <div 
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-2xl relative flex-shrink-0"
                       style={{
-                        backgroundColor: teamColor,
-                        boxShadow: `0 0 10px ${teamColor}50`
+                        backgroundColor: `${guardianStage.color}20`,
+                        boxShadow: `0 0 15px ${guardianStage.glowColor}`,
+                        border: `2px solid ${guardianStage.color}`,
                       }}
-                    />
+                    >
+                      {guardianStage.emoji}
+                      {guardianStage.stage === 5 && (
+                        <span className="absolute -top-1 -right-1 text-sm">👑</span>
+                      )}
+                    </div>
+                    
                     <div>
-                      <p className="font-semibold text-slate-900">{member.name}</p>
-                      <p className="text-sm text-slate-500">
-                        {member.teamName}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-slate-900">{member.name}</p>
+                        {guardianStage.stage === 5 && (
+                          <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-500 text-xs font-bold">
+                            LEGEND
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>{member.teamName}</span>
+                        <span>•</span>
+                        <span style={{ color: guardianStage.color }} className="font-medium">
+                          {guardianStage.japaneseName}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
