@@ -187,10 +187,10 @@ export default function ReportPage() {
   // ローディング中の表示
   if (authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-white text-lg font-medium">読み込み中...</p>
-        <p className="text-muted-foreground text-sm mt-2">チーム情報を取得しています</p>
+        <p className="text-slate-900 text-lg font-medium">読み込み中...</p>
+        <p className="text-slate-600 text-sm mt-2">チーム情報を取得しています</p>
       </div>
     );
   }
@@ -198,14 +198,14 @@ export default function ReportPage() {
   // 未ログインの場合
   if (!user || !userProfile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-400" />
-          <h1 className="text-2xl font-bold text-white mb-2">ログインが必要です</h1>
-          <p className="text-muted-foreground mb-6">報告するにはログインしてください</p>
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">ログインが必要です</h1>
+          <p className="text-slate-600 mb-6">報告するにはログインしてください</p>
           <Button
             onClick={() => router.push("/login")}
-            className="bg-gradient-to-r from-pink-500 to-purple-600"
+            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white"
           >
             ログインページへ
           </Button>
@@ -215,7 +215,7 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div 
