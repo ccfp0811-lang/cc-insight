@@ -276,9 +276,9 @@ export function AuthGuard({ children }: { children: ReactNode }) {
         return;
       }
 
-      // 管理者ルートへの不正アクセス
+      // 管理者ルートへの不正アクセス（一般メンバーは/mypageへ強制リダイレクト）
       if (isAdminRoute && userProfile.role !== "admin") {
-        router.push("/dashboard");
+        router.push("/mypage");
         return;
       }
     }
