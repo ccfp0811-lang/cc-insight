@@ -41,7 +41,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   // 保護されたページ（認証必須）
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         {/* デスクトップサイドバー */}
         <div className="hidden md:block">
           <Sidebar />
@@ -108,7 +108,7 @@ function BottomNavigation() {
   const navItems = userProfile?.role === "admin" ? adminNavItems : memberNavItems;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-900/90 backdrop-blur-md border-t border-white/10 pb-safe">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-200 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href);
@@ -119,21 +119,26 @@ function BottomNavigation() {
               key={item.href}
               onClick={() => router.push(item.href)}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-4 py-2 transition-transform duration-100 active:scale-95 relative z-50",
-                isActive ? "text-pink-500" : "text-gray-400"
+                "flex flex-col items-center justify-center gap-1 px-4 py-2 transition-all duration-200 active:scale-95 relative z-50",
+                isActive ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-fuchsia-500" : "text-slate-600"
               )}
               style={{ touchAction: "manipulation" }}
             >
               <Icon
                 className={cn(
-                  "w-6 h-6",
-                  isActive && "drop-shadow-[0_0_8px_rgba(236,72,153,0.8)]"
+                  "w-6 h-6 transition-all",
+                  isActive 
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-fuchsia-500 drop-shadow-[0_0_12px_rgba(6,182,212,0.5)]" 
+                    : "text-slate-600"
                 )}
+                style={isActive ? {
+                  filter: "drop-shadow(0 0 12px rgba(6,182,212,0.5)) drop-shadow(0 0 24px rgba(217,70,239,0.3))"
+                } : undefined}
               />
               <span
                 className={cn(
                   "text-xs font-medium",
-                  isActive && "text-pink-500"
+                  isActive && "text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-fuchsia-500"
                 )}
               >
                 {item.label}
@@ -145,7 +150,7 @@ function BottomNavigation() {
         {/* ログアウトボタン */}
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center justify-center gap-1 px-4 py-2 transition-transform duration-100 active:scale-95 text-red-400 relative z-50"
+          className="flex flex-col items-center justify-center gap-1 px-4 py-2 transition-all duration-200 active:scale-95 text-rose-600 hover:text-rose-700 relative z-50"
           style={{ touchAction: "manipulation" }}
         >
           <LogOut className="w-6 h-6" />

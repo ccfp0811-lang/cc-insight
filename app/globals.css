@@ -127,10 +127,10 @@
   
   html,
   body {
-    background-color: #111827 !important;
+    background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%) !important;
     min-height: 100vh;
     overscroll-behavior: none;
-    @apply text-foreground;
+    color: #0F172A !important;
   }
 }
 
