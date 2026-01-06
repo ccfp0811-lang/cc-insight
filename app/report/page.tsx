@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -36,8 +38,9 @@ const teams = [
 ];
 
 export default function ReportPage() {
+  const { user, userProfile } = useAuth();
+  const router = useRouter();
   const [selectedTeam, setSelectedTeam] = useState("");
-  const [name, setName] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -82,7 +85,15 @@ export default function ReportPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🚀 送信開始', { name, selectedTeam, date });
+    
+    // ログインチェック
+    if (!user || !userProfile) {
+      setError("ログインが必要です");
+      router.push("/login");
+      return;
+    }
+    
+    console.log('🚀 送信開始', { name: userProfile.displayName, selectedTeam, date });
     setLoading(true);
     setError("");
     setSuccess(false);
@@ -95,10 +106,15 @@ export default function ReportPage() {
     try {
       console.log('📝 Firestoreにデータ送信中...');
       const reportData = isXTeam ? {
+        // ユーザー情報（自動付与）
+        userId: user.uid,
+        userEmail: user.email,
+        realName: userProfile.realName,
+        name: userProfile.displayName,
         team: selectedTeam,
         teamType: "x",
-        name: name.trim(),
         date: date,
+        // X運用データ
         postCount: parseInt(xPostCount) || 0,
         postUrls: xPostUrls.filter(url => url.trim() !== ""),
         likeCount: parseInt(xLikeCount) || 0,
@@ -106,10 +122,15 @@ export default function ReportPage() {
         todayComment: xTodayComment,
         createdAt: serverTimestamp(),
       } : {
+        // ユーザー情報（自動付与）
+        userId: user.uid,
+        userEmail: user.email,
+        realName: userProfile.realName,
+        name: userProfile.displayName,
         team: selectedTeam,
         teamType: "shorts",
-        name: name.trim(),
         date: date,
+        // Shortsデータ
         accountId: accountId,
         igViews: parseInt(igViews) || 0,
         igProfileAccess: parseInt(igProfileAccess) || 0,
@@ -261,24 +282,21 @@ export default function ReportPage() {
               </div>
 
               {/* 選択後のフォーム */}
-              {selectedTeam && (
+              {selectedTeam && userProfile && (
                 <>
-                  {/* Name & Date */}
+                  {/* ログインユーザー表示 & 日付 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="flex items-center gap-2">
+                      <Label className="flex items-center gap-2">
                         <User className="w-4 h-4" />
-                        お名前
+                        報告者
                       </Label>
-                      <Input
-                        id="name"
-                        placeholder="山田太郎"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="bg-white/5 border-white/10 focus:border-pink-500"
+                      <div 
+                        className="px-3 py-2 rounded-md bg-white/10 border text-white"
                         style={{ borderColor: `${teamColor}30` }}
-                        required
-                      />
+                      >
+                        {userProfile.displayName}
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="date" className="flex items-center gap-2">
@@ -581,7 +599,7 @@ export default function ReportPage() {
                       background: `linear-gradient(to right, ${teamColor}, #a855f7)`,
                       boxShadow: `0 0 30px ${teamColor}40`
                     }}
-                    disabled={loading || !name}
+                    disabled={loading}
                   >
                     {loading ? (
                       <div className="flex items-center gap-2">
