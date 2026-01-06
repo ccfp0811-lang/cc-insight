@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/glass-card";
 import { Eye, TrendingUp, Video, Users, Loader2 } from "lucide-react";
-import { subscribeToReports, calculateOverallStats, calculateTeamStats, teams, Report } from "@/lib/firestore";
+import { getReportsByPeriod, calculateOverallStats, calculateTeamStats, teams, Report } from "@/lib/firestore";
 
 const periodOptions = [
   { id: "week", label: "今週" },
@@ -19,31 +19,28 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState("week");
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
+  // 期間変更時にデータを再取得
   useEffect(() => {
-    // 最大3秒でローディング終了
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      setInitialLoadDone(true);
-    }, 3000);
-
-    const unsubscribe = subscribeToReports((data) => {
-      setReports(data);
-      setLoading(false);
-      setInitialLoadDone(true);
-      clearTimeout(timeout);
-    });
-
-    return () => {
-      unsubscribe();
-      clearTimeout(timeout);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const data = await getReportsByPeriod(period);
+        setReports(data);
+      } catch (error) {
+        console.error("データ取得エラー:", error);
+        setReports([]);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, []);
+
+    loadData();
+  }, [period]);
 
   const overallStats = calculateOverallStats(reports);
 
-  if (loading && !initialLoadDone) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
@@ -90,7 +87,7 @@ export default function DashboardPage() {
           title="総再生数"
           icon={<Eye className="h-5 w-5" />}
           value={overallStats.totalViews.toLocaleString()}
-          subtitle="全チーム合計"
+          subtitle={`${periodOptions.find(p => p.id === period)?.label || '今週'}の合計`}
         >
           <div></div>
         </GlassCard>
@@ -99,7 +96,7 @@ export default function DashboardPage() {
           title="総インプレッション"
           icon={<TrendingUp className="h-5 w-5" />}
           value={overallStats.totalImpressions.toLocaleString()}
-          subtitle="全チーム合計"
+          subtitle={`${periodOptions.find(p => p.id === period)?.label || '今週'}の合計`}
         >
           <div></div>
         </GlassCard>
@@ -108,7 +105,7 @@ export default function DashboardPage() {
           title="総投稿数"
           icon={<Video className="h-5 w-5" />}
           value={overallStats.totalPosts.toString()}
-          subtitle="全チーム合計"
+          subtitle={`${periodOptions.find(p => p.id === period)?.label || '今週'}の合計`}
         >
           <div></div>
         </GlassCard>
@@ -205,12 +202,15 @@ export default function DashboardPage() {
       </div>
 
       {/* Empty State */}
-      {reports.length === 0 && initialLoadDone && (
+      {reports.length === 0 && !loading && (
         <GlassCard glowColor="#a855f7" className="p-8 text-center">
           <div className="text-6xl mb-4">📊</div>
-          <h3 className="text-xl font-semibold mb-2">まだデータがありません</h3>
+          <h3 className="text-xl font-semibold mb-2">
+            {periodOptions.find(p => p.id === period)?.label}のデータがありません
+          </h3>
           <p className="text-muted-foreground mb-4">
-            メンバーが /report から報告を送信すると、ここにリアルタイムで表示されます。
+            選択した期間にはまだレポートが送信されていません。
+            別の期間を選択するか、メンバーが報告を送信するのをお待ちください。
           </p>
           <Button
             className="bg-gradient-to-r from-pink-500 to-purple-500 text-white"

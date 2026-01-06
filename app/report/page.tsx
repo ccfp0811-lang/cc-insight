@@ -82,6 +82,7 @@ export default function ReportPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🚀 送信開始', { name, selectedTeam, date });
     setLoading(true);
     setError("");
     setSuccess(false);
@@ -92,6 +93,7 @@ export default function ReportPage() {
     );
 
     try {
+      console.log('📝 Firestoreにデータ送信中...');
       const reportData = isXTeam ? {
         team: selectedTeam,
         teamType: "x",

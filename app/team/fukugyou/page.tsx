@@ -1,31 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CircularProgress } from "@/components/circular-progress";
 import { GlassCard, TodayProgress, NeonGauge } from "@/components/glass-card";
-import { Eye, TrendingUp, Video, Users, Target, Calendar, Bookmark, Heart } from "lucide-react";
-import {
-  teams,
-  getTeamStats,
-  getMembersByTeam,
-  getMemberStats,
-  periodOptions,
-  type PeriodType,
-} from "@/lib/dummy-data";
+import { Eye, TrendingUp, Video, Users, Target, Calendar } from "lucide-react";
+import { getReportsByPeriod, calculateTeamStats, teams } from "@/lib/firestore";
 
 const team = teams.find((t) => t.id === "fukugyou")!;
 
+const periodOptions = [
+  { id: "week", label: "今週" },
+  { id: "month", label: "今月" },
+  { id: "1q", label: "1Q" },
+  { id: "2q", label: "2Q" },
+  { id: "3q", label: "3Q" },
+  { id: "4q", label: "4Q" },
+];
+
 export default function FukugyouTeamPage() {
-  const [period, setPeriod] = useState<PeriodType>("week");
-  
-  const teamStats = getTeamStats("fukugyou", period);
-  const teamMembers = getMembersByTeam("fukugyou");
-  
-  // 今日の進捗（ダミーデータ）
-  const todayPosts = 7;
-  const todayTarget = team.dailyPostGoal * teamMembers.length; // チーム全体の1日目標
+  const [period, setPeriod] = useState("week");
+  const [teamStats, setTeamStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const reports = await getReportsByPeriod(period, "fukugyou");
+        const stats = calculateTeamStats(reports, "fukugyou");
+        setTeamStats(stats);
+      } catch (error) {
+        console.error("データ取得エラー:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [period]);
+
+  if (loading || !teamStats) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">データを読み込んでいます...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 今日の進捗（今週の投稿数を7で割る）
+  const todayPosts = Math.floor(teamStats.totalPosts / 7);
+  const todayTarget = team.dailyPostGoal * teamStats.memberCount;
 
   return (
     <div className="space-y-8">
@@ -51,7 +80,7 @@ export default function FukugyouTeamPage() {
               key={option.id}
               variant={period === option.id ? "default" : "outline"}
               size="sm"
-              onClick={() => setPeriod(option.id as PeriodType)}
+              onClick={() => setPeriod(option.id)}
               className={
                 period === option.id
                   ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white border-0 shadow-[0_0_15px_rgba(236,72,153,0.5)]"
@@ -96,7 +125,7 @@ export default function FukugyouTeamPage() {
         {/* Circular Progress with Glassmorphism */}
         <GlassCard glowColor="#ec4899" className="p-8">
           <div className="flex items-center gap-2 mb-6">
-            <Target className="h-5 w-5 text-pink-500" />
+            <Target className="h-5 h-5 text-pink-500" />
             <h3 className="text-lg font-semibold">目標達成率</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-6">
@@ -126,51 +155,27 @@ export default function FukugyouTeamPage() {
           </div>
         </GlassCard>
 
-        {/* Weekly Progress */}
+        {/* Team Overview */}
         <GlassCard glowColor="#ec4899" className="p-8">
           <div className="flex items-center gap-2 mb-6">
             <Calendar className="h-5 w-5 text-pink-500" />
-            <h3 className="text-lg font-semibold">週別進捗</h3>
+            <h3 className="text-lg font-semibold">チーム概要</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-6">
-            週ごとの投稿数と目標
-          </p>
           
-          <div className="space-y-5">
-            {teamMembers[0]?.weeklyData.map((week) => {
-              const weekTotal = teamMembers.reduce(
-                (sum, m) => sum + (m.weeklyData.find((w) => w.week === week.week)?.posts || 0),
-                0
-              );
-              const weekTarget = teamMembers.reduce(
-                (sum, m) => sum + (m.weeklyData.find((w) => w.week === week.week)?.targetPosts || 0),
-                0
-              );
-
-              return (
-                <NeonGauge
-                  key={week.week}
-                  value={weekTotal}
-                  max={weekTarget}
-                  label={`Week ${week.week}`}
-                  color="#ec4899"
-                />
-              );
-            })}
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-white/5 border border-pink-500/20">
+              <p className="text-sm text-muted-foreground">アクティブメンバー</p>
+              <p className="text-2xl font-bold text-pink-500">{teamStats.memberCount}人</p>
+            </div>
+            <div className="p-4 rounded-lg bg-white/5 border border-pink-500/20">
+              <p className="text-sm text-muted-foreground">達成率</p>
+              <p className="text-2xl font-bold text-pink-500">{teamStats.achievementRate}%</p>
+            </div>
+            <div className="p-4 rounded-lg bg-white/5 border border-pink-500/20">
+              <p className="text-sm text-muted-foreground">100%達成者</p>
+              <p className="text-2xl font-bold text-pink-500">{teamStats.perfectMembers}人</p>
+            </div>
           </div>
-        </GlassCard>
-      </div>
-
-      {/* Additional Insights */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <GlassCard glowColor="#f472b6" title="保存数" icon={<Bookmark className="h-5 w-5" />} value="12,456" subtitle="コンテンツ保存回数">
-          <div></div>
-        </GlassCard>
-        <GlassCard glowColor="#fb7185" title="いいね" icon={<Heart className="h-5 w-5" />} value="45,678" subtitle="総いいね数">
-          <div></div>
-        </GlassCard>
-        <GlassCard glowColor="#ec4899" title="エンゲージメント率" icon={<TrendingUp className="h-5 w-5" />} value="4.8%" subtitle="平均エンゲージメント">
-          <div></div>
         </GlassCard>
       </div>
 
@@ -185,18 +190,18 @@ export default function FukugyouTeamPage() {
           <CardDescription>各メンバーの詳細な統計</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {teamMembers
-              .map((member) => ({
-                ...member,
-                stats: getMemberStats(member, period),
-              }))
-              .sort((a, b) => b.stats.views - a.stats.views)
-              .map((member, index) => (
+          {teamStats.members.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>まだレポートが送信されていません</p>
+              <p className="text-sm mt-2">メンバーが日次レポートを送信すると、ここに表示されます</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {teamStats.members.map((member: any, index: number) => (
                 <div
-                  key={member.id}
+                  key={member.name}
                   className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all hover:scale-[1.01] ${
-                    member.stats.isPerfect
+                    member.achievementRate >= 100
                       ? "border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.4)] bg-pink-500/5"
                       : "border-transparent bg-muted/30"
                   }`}
@@ -215,40 +220,38 @@ export default function FukugyouTeamPage() {
                     >
                       {index + 1}
                     </span>
-                    <span className="text-2xl">{member.avatar}</span>
                     <div>
                       <p className="font-semibold flex items-center gap-2">
                         {member.name}
-                        {member.stats.isPerfect && (
+                        {member.achievementRate >= 100 && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-[0_0_10px_rgba(236,72,153,0.5)]">
                             🔥 MVP
                           </span>
                         )}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        達成率: {member.stats.achievementRate}%
+                        達成率: {member.achievementRate}% ({member.reports}回報告)
                       </p>
                     </div>
                   </div>
                   <div className="flex gap-8 text-sm">
                     <div className="text-right">
                       <p className="text-muted-foreground">再生数</p>
-                      <p className="font-bold">{member.stats.views.toLocaleString()}</p>
+                      <p className="font-bold">{member.views.toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-muted-foreground">投稿数</p>
-                      <p className="font-bold">
-                        {member.stats.posts} / {member.stats.targetPosts}
-                      </p>
+                      <p className="text-muted-foreground">投稿</p>
+                      <p className="font-bold">{member.posts}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-muted-foreground">インプレッション</p>
-                      <p className="font-bold">{member.stats.impressions.toLocaleString()}</p>
+                      <p className="font-bold">{member.impressions.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
               ))}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
