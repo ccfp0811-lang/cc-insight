@@ -334,8 +334,9 @@ export default function AllTeamsRankingPage() {
                                    style={{ filter: dummyMember.cursed ? 'grayscale(100%) brightness(0.5)' : 'none' }}>
                                 {dummyMember.cursed ? '😴' : dummyMember.guardianStage === 4 ? '👑' : dummyMember.guardianStage === 3 ? '⚔️' : dummyMember.guardianStage === 2 ? '🛡️' : dummyMember.guardianStage === 1 ? '🌱' : '🥚'}
                               </div>
+                              {/* 💤オーバーレイ */}
                               {dummyMember.stage === 'bottom10' && (
-                                <div className="dust-particles" />
+                                <div className="sleep-overlay">💤</div>
                               )}
                             </div>
 
@@ -361,16 +362,16 @@ export default function AllTeamsRankingPage() {
                             </div>
 
                             {/* KPI表示 */}
-                            <div className="flex gap-6 text-sm">
-                              <div className="text-right">
-                                <p className="text-xs text-slate-400">再生</p>
-                                <p className="text-xl font-bold" style={{ color }}>
+                            <div className="flex gap-3 md:gap-4 text-sm flex-shrink-0">
+                              <div className="text-right min-w-[60px]">
+                                <p className="text-xs text-slate-400 mb-0.5">再生</p>
+                                <p className="text-base font-bold" style={{ color }}>
                                   {dummyMember.views.toLocaleString()}
                                 </p>
                               </div>
-                              <div className="text-right">
-                                <p className="text-xs text-slate-400">投稿</p>
-                                <p className="text-xl font-bold" style={{ color }}>
+                              <div className="text-right min-w-[50px]">
+                                <p className="text-xs text-slate-400 mb-0.5">投稿</p>
+                                <p className="text-base font-bold" style={{ color }}>
                                   {dummyMember.posts}
                                 </p>
                               </div>
@@ -534,45 +535,45 @@ export default function AllTeamsRankingPage() {
                             </div>
 
                             {/* KPI表示 */}
-                            <div className="flex gap-6 text-sm">
+                            <div className="flex gap-3 md:gap-4 text-sm flex-shrink-0">
                               {isShorts ? (
                                 <>
-                                  <div className="text-right">
-                                    <p className="text-xs text-slate-500">再生</p>
-                                    <p className="text-xl font-bold" style={{ color }}>
+                                  <div className="text-right min-w-[60px]">
+                                    <p className="text-xs text-slate-500 mb-0.5">再生</p>
+                                    <p className="text-base font-bold" style={{ color }}>
                                       {member.views.toLocaleString()}
                                     </p>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-xs text-slate-500">投稿</p>
-                                    <p className="text-xl font-bold" style={{ color }}>
+                                  <div className="text-right min-w-[50px]">
+                                    <p className="text-xs text-slate-500 mb-0.5">投稿</p>
+                                    <p className="text-base font-bold" style={{ color }}>
                                       {member.posts}
                                     </p>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-xs text-slate-500">交流</p>
-                                    <p className="text-xl font-bold" style={{ color }}>
+                                  <div className="text-right min-w-[50px]">
+                                    <p className="text-xs text-slate-500 mb-0.5">交流</p>
+                                    <p className="text-base font-bold" style={{ color }}>
                                       {(member.interactions || 0).toLocaleString()}
                                     </p>
                                   </div>
                                 </>
                               ) : (
                                 <>
-                                  <div className="text-right">
-                                    <p className="text-xs text-slate-500">いいね</p>
-                                    <p className="text-xl font-bold" style={{ color }}>
+                                  <div className="text-right min-w-[60px]">
+                                    <p className="text-xs text-slate-500 mb-0.5">いいね</p>
+                                    <p className="text-base font-bold" style={{ color }}>
                                       {(member.likes || 0).toLocaleString()}
                                     </p>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-xs text-slate-500">リプライ</p>
-                                    <p className="text-xl font-bold" style={{ color }}>
+                                  <div className="text-right min-w-[60px]">
+                                    <p className="text-xs text-slate-500 mb-0.5">リプライ</p>
+                                    <p className="text-base font-bold" style={{ color }}>
                                       {(member.replies || 0).toLocaleString()}
                                     </p>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-xs text-slate-500">投稿</p>
-                                    <p className="text-xl font-bold" style={{ color }}>
+                                  <div className="text-right min-w-[50px]">
+                                    <p className="text-xs text-slate-500 mb-0.5">投稿</p>
+                                    <p className="text-base font-bold" style={{ color }}>
                                       {member.posts}
                                     </p>
                                   </div>

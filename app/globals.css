@@ -565,10 +565,10 @@
 }
 
 /* =====================================
-   🏆 ランキング表 - 動的オーラ・ポーズ
+   🏆 ランキング表 - 動的オーラ・ポーズ（PNG画像対応版）
    ===================================== */
 
-/* TOP 10%: 勝利ポーズ + 極彩色 */
+/* TOP 10%: 勝利ポーズ + リング状光彩 */
 @keyframes triumphant-pose {
   0%, 100% {
     transform: translateY(0) scale(1);
@@ -578,30 +578,62 @@
   }
 }
 
-.ranking-top10 {
-  animation: rainbow-pulse 1.5s ease-in-out infinite;
-  filter: saturate(150%) drop-shadow(0 0 30px gold);
+@keyframes rainbow-ring {
+  0%, 100% {
+    box-shadow: 0 0 20px 4px #FFD700, 0 0 40px 8px rgba(255, 215, 0, 0.4);
+  }
+  33% {
+    box-shadow: 0 0 20px 4px #FF00FF, 0 0 40px 8px rgba(255, 0, 255, 0.4);
+  }
+  66% {
+    box-shadow: 0 0 20px 4px #00FFFF, 0 0 40px 8px rgba(0, 255, 255, 0.4);
+  }
 }
 
 .ranking-top10 .guardian-avatar {
   animation: triumphant-pose 2s ease-in-out infinite;
 }
 
-/* TOP 30%: 安定した輝き */
-.ranking-top30 {
-  filter: saturate(110%) drop-shadow(0 0 15px rgba(251, 191, 36, 0.6));
+.ranking-top10 .guardian-avatar::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  animation: rainbow-ring 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* TOP 30%: 安定した輝き + 金色リング */
+@keyframes golden-ring {
+  0%, 100% {
+    box-shadow: 0 0 15px 3px rgba(251, 191, 36, 0.8), 0 0 30px 6px rgba(251, 191, 36, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(251, 191, 36, 1), 0 0 40px 8px rgba(251, 191, 36, 0.4);
+  }
 }
 
 .ranking-top30 .guardian-avatar {
   animation: guardian-breathe 3s ease-in-out infinite;
 }
 
-/* 中間層（30-70%）: 普通 */
-.ranking-middle {
-  filter: saturate(90%);
+.ranking-top30 .guardian-avatar::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  animation: golden-ring 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
 }
 
-/* 下位 30%: うなだれる */
+/* 中間層（30-70%）: 普通 */
+.ranking-middle .guardian-avatar {
+  /* 特別なエフェクトなし */
+}
+
+/* 下位 30%: うなだれる + くすんだ色 */
 @keyframes slumped-pose {
   0%, 100% {
     transform: rotate(0deg) translateY(0);
@@ -611,17 +643,17 @@
   }
 }
 
-.ranking-bottom30 {
-  filter: grayscale(50%) brightness(0.7);
-  opacity: 0.8;
-}
-
 .ranking-bottom30 .guardian-avatar {
   animation: slumped-pose 3s ease-in-out infinite;
   transform-origin: bottom center;
 }
 
-/* 最下位層（10%）: 居眠り */
+.ranking-bottom30 .guardian-avatar img,
+.ranking-bottom30 .guardian-avatar > div:first-child {
+  filter: grayscale(50%) brightness(0.8);
+}
+
+/* 最下位層（10%）: 居眠り + モノクロ */
 @keyframes sleeping-zzz {
   0%, 100% {
     transform: scale(1);
@@ -631,26 +663,22 @@
   }
 }
 
-.ranking-bottom10 {
-  filter: grayscale(80%) brightness(0.5);
-  opacity: 0.6;
-}
-
 .ranking-bottom10 .guardian-avatar {
   animation: sleeping-zzz 4s ease-in-out infinite;
 }
 
-/* 埃パーティクル（下位層）*/
-.dust-particles {
-  position: relative;
+.ranking-bottom10 .guardian-avatar img,
+.ranking-bottom10 .guardian-avatar > div:first-child {
+  filter: grayscale(80%) brightness(0.5);
 }
 
-.dust-particles::after {
-  content: '💤';
+/* 💤オーバーレイ（下位層）*/
+.sleep-overlay {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  font-size: 12px;
-  opacity: 0.5;
+  top: -8px;
+  right: -8px;
+  font-size: 16px;
+  z-index: 10;
   animation: float-gentle 2s ease-in-out infinite;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 }
