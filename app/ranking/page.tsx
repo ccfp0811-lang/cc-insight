@@ -29,6 +29,7 @@ export default function AllTeamsRankingPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [guardianProfiles, setGuardianProfiles] = useState<{ [userId: string]: any }>({});
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -39,8 +40,29 @@ export default function AllTeamsRankingPage() {
     }, 5000);
 
     try {
-      const unsubscribe = subscribeToReports((data) => {
+      const unsubscribe = subscribeToReports(async (data) => {
         setReports(data);
+        
+        // 各レポートのuserIdから守護神データを取得
+        const profiles: { [userId: string]: any } = {};
+        const uniqueUserIds = Array.from(new Set(data.map(r => r.userId).filter(Boolean)));
+        
+        await Promise.all(
+          uniqueUserIds.map(async (userId) => {
+            if (userId) {
+              try {
+                const profile = await getUserGuardianProfile(userId);
+                if (profile) {
+                  profiles[userId] = profile;
+                }
+              } catch (error) {
+                console.error(`Failed to fetch guardian for user ${userId}:`, error);
+              }
+            }
+          })
+        );
+        
+        setGuardianProfiles(profiles);
         setLoading(false);
         setError(null);
         clearTimeout(timeout);
@@ -261,11 +283,41 @@ export default function AllTeamsRankingPage() {
                       const rank = index + 1;
                       const isTop3 = rank <= 3;
                       
-                      // デフォルト守護神表示（TODO: userIdベースで実際の守護神データ取得）
-                      const defaultGuardian = {
-                        emoji: "🛡️",
-                        japaneseName: "守護神",
-                        color: color
+                      // ユーザーIDからレポートを逆引き
+                      const memberReport = reports.find(r => r.name === member.name && r.team === id);
+                      const userId = memberReport?.userId;
+                      
+                      // 守護神データ取得
+                      let guardianData: any = null;
+                      let guardianInfo: any = null;
+                      
+                      if (userId && guardianProfiles[userId]) {
+                        const profile = guardianProfiles[userId];
+                        const guardianId = profile.activeGuardianId;
+                        
+                        if (guardianId && profile.guardians[guardianId]) {
+                          const guardian = GUARDIANS[guardianId as GuardianId];
+                          const instance = profile.guardians[guardianId];
+                          const attr = ATTRIBUTES[guardian.attribute];
+                          const stageInfo = EVOLUTION_STAGES[instance.stage];
+                          
+                          guardianData = {
+                            guardianId,
+                            stage: instance.stage,
+                            imagePath: getGuardianImagePath(guardianId as GuardianId, instance.stage),
+                            color: attr.color,
+                            name: guardian.name,
+                            stageName: stageInfo.name,
+                            emoji: attr.emoji
+                          };
+                        }
+                      }
+                      
+                      // フォールバック（守護神未選択）
+                      const fallbackGuardian = {
+                        emoji: "🥚",
+                        name: "未召喚",
+                        color: "#94a3b8"
                       };
 
                       // 表示する主要数値
@@ -300,17 +352,55 @@ export default function AllTeamsRankingPage() {
                               {getMedalIcon(rank)}
                             </div>
 
-                            {/* ガーディアン */}
-                            <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
-                              style={{
-                                backgroundColor: `${defaultGuardian.color}20`,
-                                boxShadow: `0 0 15px ${defaultGuardian.color}`,
-                                border: `2px solid ${defaultGuardian.color}`,
-                              }}
-                            >
-                              {defaultGuardian.emoji}
-                            </div>
+                            {/* ガーディアン - ポータル型表示 */}
+                            {guardianData ? (
+                              <div className="relative w-12 h-12 flex-shrink-0">
+                                {/* オーラリング */}
+                                <div 
+                                  className="absolute inset-0 rounded-full animate-pulse"
+                                  style={{
+                                    border: `2px solid ${guardianData.color}`,
+                                    boxShadow: `0 0 15px ${guardianData.color}80`,
+                                  }}
+                                />
+                                
+                                {/* 内側のグロー */}
+                                <div 
+                                  className="absolute inset-1 rounded-full opacity-20"
+                                  style={{
+                                    background: `radial-gradient(circle, ${guardianData.color} 0%, transparent 70%)`
+                                  }}
+                                />
+
+                                {/* 守護神画像 */}
+                                <div className="absolute inset-1 rounded-full overflow-hidden bg-black/30">
+                                  <img
+                                    src={guardianData.imagePath}
+                                    alt={guardianData.name}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                  />
+                                  {/* フォールバック絵文字 */}
+                                  <div className="hidden absolute inset-0 flex items-center justify-center text-xl">
+                                    {guardianData.emoji}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                className="w-12 h-12 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
+                                style={{
+                                  backgroundColor: `${fallbackGuardian.color}20`,
+                                  boxShadow: `0 0 15px ${fallbackGuardian.color}`,
+                                  border: `2px solid ${fallbackGuardian.color}`,
+                                }}
+                              >
+                                {fallbackGuardian.emoji}
+                              </div>
+                            )}
 
                             {/* メンバー情報 */}
                             <div className="flex-1 min-w-0">
@@ -325,8 +415,8 @@ export default function AllTeamsRankingPage() {
                                 )}
                               </div>
                               <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <span style={{ color: defaultGuardian.color }} className="font-medium">
-                                  {defaultGuardian.japaneseName}
+                                <span style={{ color: guardianData ? guardianData.color : fallbackGuardian.color }} className="font-medium">
+                                  {guardianData ? guardianData.stageName : fallbackGuardian.name}
                                 </span>
                                 <span>•</span>
                                 <span>{member.reports}回報告</span>
