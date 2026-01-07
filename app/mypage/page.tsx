@@ -67,11 +67,49 @@ export default function MyPage() {
   
   if (!activeGuardian || !activeInstance) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground mb-4">守護神が選択されていません</p>
-        <Link href="/guardians">
-          <Button>守護神を選ぶ</Button>
-        </Link>
+      <div className="min-h-[70vh] flex items-center justify-center relative overflow-hidden">
+        {/* 背景エフェクト */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900" />
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
+        </div>
+
+        {/* コンテンツ */}
+        <div className="relative z-10 text-center max-w-md mx-auto px-4">
+          {/* 魔法陣風エフェクト */}
+          <div className="relative mb-8">
+            <div className="w-48 h-48 mx-auto relative">
+              <div className="absolute inset-0 rounded-full border-4 border-purple-500/30 animate-spin-slow" />
+              <div className="absolute inset-4 rounded-full border-4 border-pink-500/30 animate-spin-reverse" />
+              <div className="absolute inset-8 rounded-full border-4 border-blue-500/30 animate-spin-slow" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="w-16 h-16 text-purple-400 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* Glassmorphismカード */}
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4">
+              召喚を待つ守護神
+            </h2>
+            <p className="text-gray-300 mb-8">
+              あなたの相棒となる守護神を選び、<br />
+              共に成長する冒険を始めましょう
+            </p>
+            
+            <Link href="/guardians">
+              <Button 
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 text-white border-0 shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                守護神を選ぶ
+                <Sparkles className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -90,8 +128,8 @@ export default function MyPage() {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
           マイページ
         </h1>
-        <p className="text-muted-foreground">
-          {user.email} の冒険の記録
+        <p className="text-xl font-bold text-white">
+          {user.displayName || user.email}さんの冒険の記録
         </p>
       </div>
 
@@ -166,17 +204,17 @@ export default function MyPage() {
 
               {/* ステータス表示 */}
               <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="p-3 bg-slate-800/50 rounded-lg">
-                  <p className="text-xs text-gray-400 mb-1">進化段階</p>
-                  <p className="text-lg font-bold text-white">{stageInfo.name}</p>
+                <div className="p-4 bg-black/30 rounded-xl border border-white/10 backdrop-blur-sm">
+                  <p className="text-xs text-white font-bold mb-1">進化段階</p>
+                  <p className="text-2xl font-bold text-white">{stageInfo.name}</p>
                 </div>
-                <div className="p-3 bg-slate-800/50 rounded-lg">
-                  <p className="text-xs text-gray-400 mb-1">投資済み</p>
-                  <p className="text-lg font-bold text-purple-400">{investedEnergy}E</p>
+                <div className="p-4 bg-black/30 rounded-xl border border-white/10 backdrop-blur-sm">
+                  <p className="text-xs text-white font-bold mb-1">投資済み</p>
+                  <p className="text-2xl font-bold text-purple-400">{investedEnergy}E</p>
                 </div>
-                <div className="p-3 bg-slate-800/50 rounded-lg">
-                  <p className="text-xs text-gray-400 mb-1">オーラLv</p>
-                  <p className="text-lg font-bold text-pink-400">{auraLevel}%</p>
+                <div className="p-4 bg-black/30 rounded-xl border border-white/10 backdrop-blur-sm">
+                  <p className="text-xs text-white font-bold mb-1">オーラLv</p>
+                  <p className="text-2xl font-bold text-pink-400">{auraLevel}%</p>
                 </div>
               </div>
 
