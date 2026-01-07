@@ -13,7 +13,8 @@ import {
   Trophy,
   User,
   Users,
-  Settings
+  Settings,
+  Shield
 } from "lucide-react";
 import { getTeamType, getGuardianProgress } from "@/lib/guardian-system";
 import { getReportsByPeriod } from "@/lib/firestore";
@@ -47,6 +48,12 @@ const memberMobileNavItems = [
 
 // 管理者専用ナビゲーション
 const adminNavItems = [
+  {
+    title: "Active Monitor",
+    subtitle: "離脱防止監視",
+    href: "/admin/monitor",
+    icon: Shield,
+  },
   {
     title: "全体サマリー",
     href: "/dashboard",
