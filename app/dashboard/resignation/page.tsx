@@ -101,18 +101,48 @@ export default function ResignationTeamPage() {
         teamName={team.name}
       />
 
-      {/* Stats Cards */}
+      {/* 全11項目完全実装 */}
+      {/* 項目1-4: 基本指標 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <GlassCard glowColor="#06b6d4" title="総再生数" icon={<Eye className="h-5 w-5" />} value={teamStats.totalViews.toLocaleString()} subtitle="全メンバー合計">
+        <GlassCard glowColor="#06b6d4" title="総再生数" icon={<Eye className="h-5 w-5" />} value={teamStats.totalViews.toLocaleString()} subtitle="今週の合計">
           <div></div>
         </GlassCard>
-        <GlassCard glowColor="#06b6d4" title="インプレッション" icon={<TrendingUp className="h-5 w-5" />} value={teamStats.totalImpressions.toLocaleString()} subtitle="リーチ数">
+        <GlassCard glowColor="#06b6d4" title="総インプレッション" icon={<TrendingUp className="h-5 w-5" />} value={teamStats.totalImpressions.toLocaleString()} subtitle="今週の合計">
           <div></div>
         </GlassCard>
-        <GlassCard glowColor="#06b6d4" title="投稿数" icon={<Video className="h-5 w-5" />} value={`${teamStats.totalPosts} / ${teamStats.totalTargetPosts}`} subtitle="目標に対する実績">
+        <GlassCard glowColor="#06b6d4" title="総投稿数" icon={<Video className="h-5 w-5" />} value={teamStats.totalPosts.toLocaleString()} subtitle="今週の合計">
           <div></div>
         </GlassCard>
-        <GlassCard glowColor="#06b6d4" title="MVP達成者" icon={<Users className="h-5 w-5" />} value={`${teamStats.perfectMembers}人`} subtitle={`${teamStats.memberCount}人中`}>
+        <GlassCard glowColor="#06b6d4" title="アクティブメンバー" icon={<Users className="h-5 w-5" />} value={`${teamStats.memberCount}人`} subtitle="報告済み人数">
+          <div></div>
+        </GlassCard>
+      </div>
+
+      {/* 項目5-8: Instagram詳細KPI */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <GlassCard glowColor="#22c55e" title="プロフアクセス数" icon={<Users className="h-5 w-5" />} value={teamStats.totalProfileAccess.toLocaleString()} subtitle="Instagram">
+          <div></div>
+        </GlassCard>
+        <GlassCard glowColor="#f59e0b" title="外部タップ数" icon={<TrendingUp className="h-5 w-5" />} value={teamStats.totalExternalTaps.toLocaleString()} subtitle="リンククリック">
+          <div></div>
+        </GlassCard>
+        <GlassCard glowColor="#8b5cf6" title="インタラクション" icon={<Eye className="h-5 w-5" />} value={teamStats.totalInteractions.toLocaleString()} subtitle="エンゲージメント">
+          <div></div>
+        </GlassCard>
+        <GlassCard glowColor="#06b6d4" title="ストーリー投稿" icon={<Video className="h-5 w-5" />} value={teamStats.totalStories.toString()} subtitle="週間合計">
+          <div></div>
+        </GlassCard>
+      </div>
+
+      {/* 項目9-11: SNSフォロワー統計 */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <GlassCard glowColor="#e1306c" title="Instagram" icon={<Instagram className="h-5 w-5" />} value={teamStats.totalIgFollowers.toLocaleString()} subtitle="総フォロワー数">
+          <div></div>
+        </GlassCard>
+        <GlassCard glowColor="#ff0000" title="YouTube" icon={<Youtube className="h-5 w-5" />} value={teamStats.totalYtFollowers.toLocaleString()} subtitle="総フォロワー数">
+          <div></div>
+        </GlassCard>
+        <GlassCard glowColor="#000000" title="TikTok" icon={<Video className="h-5 w-5" />} value={teamStats.totalTiktokFollowers.toLocaleString()} subtitle="総フォロワー数">
           <div></div>
         </GlassCard>
       </div>
