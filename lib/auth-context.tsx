@@ -155,7 +155,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         createdAt: serverTimestamp() as Timestamp,
       };
 
-      await setDoc(doc(db, "users", newUser.uid), userProfile);
+      // Firestoreにユーザードキュメント作成
+      await setDoc(doc(db, "users", newUser.uid), {
+        ...userProfile,
+        // 守護神プロファイルを初期化（重要！）
+        guardianProfile: {
+          energy: {
+            current: 0,
+            totalEarned: 0,
+            totalSpent: 0
+          },
+          streak: {
+            current: 0,
+            max: 0,
+            lastReportDate: null
+          },
+          guardians: {},
+          activeGuardianId: null,
+          gender: null,
+          ageGroup: null
+        }
+      });
 
       // メール認証送信（日本語設定）
       auth.languageCode = 'ja';
