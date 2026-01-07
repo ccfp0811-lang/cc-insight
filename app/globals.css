@@ -563,3 +563,94 @@
 .cosmic-bg {
   background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #4c1d95 100%);
 }
+
+/* =====================================
+   🏆 ランキング表 - 動的オーラ・ポーズ
+   ===================================== */
+
+/* TOP 10%: 勝利ポーズ + 極彩色 */
+@keyframes triumphant-pose {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.05);
+  }
+}
+
+.ranking-top10 {
+  animation: rainbow-pulse 1.5s ease-in-out infinite;
+  filter: saturate(150%) drop-shadow(0 0 30px gold);
+}
+
+.ranking-top10 .guardian-avatar {
+  animation: triumphant-pose 2s ease-in-out infinite;
+}
+
+/* TOP 30%: 安定した輝き */
+.ranking-top30 {
+  filter: saturate(110%) drop-shadow(0 0 15px rgba(251, 191, 36, 0.6));
+}
+
+.ranking-top30 .guardian-avatar {
+  animation: guardian-breathe 3s ease-in-out infinite;
+}
+
+/* 中間層（30-70%）: 普通 */
+.ranking-middle {
+  filter: saturate(90%);
+}
+
+/* 下位 30%: うなだれる */
+@keyframes slumped-pose {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(-5deg) translateY(3px);
+  }
+}
+
+.ranking-bottom30 {
+  filter: grayscale(50%) brightness(0.7);
+  opacity: 0.8;
+}
+
+.ranking-bottom30 .guardian-avatar {
+  animation: slumped-pose 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* 最下位層（10%）: 居眠り */
+@keyframes sleeping-zzz {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.98);
+  }
+}
+
+.ranking-bottom10 {
+  filter: grayscale(80%) brightness(0.5);
+  opacity: 0.6;
+}
+
+.ranking-bottom10 .guardian-avatar {
+  animation: sleeping-zzz 4s ease-in-out infinite;
+}
+
+/* 埃パーティクル（下位層）*/
+.dust-particles {
+  position: relative;
+}
+
+.dust-particles::after {
+  content: '💤';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 12px;
+  opacity: 0.5;
+  animation: float-gentle 2s ease-in-out infinite;
+}
