@@ -59,21 +59,46 @@ export default function PendingApprovalPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center cosmic-bg relative overflow-hidden p-4">
+      {/* 星雲背景 */}
+      <div className="absolute inset-0">
+        <div className="nebula-bg absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full blur-3xl opacity-30" 
+             style={{
+               background: 'radial-gradient(ellipse at center, rgba(250, 204, 21, 0.3) 0%, rgba(251, 146, 60, 0.2) 40%, transparent 70%)'
+             }} 
+        />
+        <div className="nebula-bg absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full blur-3xl opacity-25"
+             style={{
+               background: 'radial-gradient(ellipse at center, rgba(168, 85, 247, 0.2) 0%, transparent 60%)',
+               animationDelay: '7s'
+             }} 
+        />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         {/* アイコン */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 mb-4 relative">
-            <Clock className="w-10 h-10 text-yellow-400" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/40 mb-6 relative"
+               style={{
+                 boxShadow: '0 0 40px rgba(250, 204, 21, 0.3)'
+               }}>
+            <Clock className="w-12 h-12 text-yellow-400" 
+                   style={{
+                     filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.6))'
+                   }} />
             {/* パルスアニメーション */}
             <span className="absolute inset-0 rounded-full border-2 border-yellow-400/50 animate-ping" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">承認待ち</h1>
-          <p className="text-gray-400">管理者の承認をお待ちください</p>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-400 bg-clip-text text-transparent mb-3 drop-shadow-lg">
+            ギルドへの加入申請中
+          </h1>
+          <p className="text-gray-300 text-sm">
+            ギルド（管理者）による承認を待っています...
+          </p>
         </div>
 
         {/* メインカード */}
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
+        <div className="glass-premium rounded-2xl p-8 shadow-2xl border border-white/20">
           <div className="space-y-6">
             {/* ユーザー情報 */}
             <div className="space-y-3">

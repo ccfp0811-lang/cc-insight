@@ -64,9 +64,22 @@ export default function MyPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-        <p className="text-sm text-muted-foreground">マイページを読み込み中...</p>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 relative">
+        {/* 読み込み中の星雲エフェクト */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-32 h-32 rounded-full bg-purple-500/20 blur-3xl animate-pulse" />
+        </div>
+        
+        <div className="relative">
+          <Loader2 className="w-16 h-16 animate-spin text-pink-500" 
+                   style={{
+                     filter: 'drop-shadow(0 0 20px rgba(236, 72, 153, 0.6))'
+                   }} />
+          <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-purple-500/30 animate-ping" />
+        </div>
+        
+        <p className="text-lg text-gray-300 font-medium">マイページを読み込み中...</p>
+        <p className="text-xs text-gray-500">宇宙の彼方から情報を取得しています</p>
       </div>
     );
   }
@@ -191,6 +204,21 @@ export default function MyPage() {
 
           {/* フローティング＆虹色グローカード */}
           <div className="floating-card rainbow-glow-border backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl">
+            {/* チュートリアル誘導 */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+              className="mb-6 text-center"
+            >
+              <p className="text-xs text-purple-300 mb-2 tracking-wide">
+                ✨ 召喚の準備が整いました ✨
+              </p>
+              <p className="text-xs text-gray-400">
+                中央の魔法陣から、あなたの運命の相棒を選んでください
+              </p>
+            </motion.div>
+
             <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent mb-4 drop-shadow-lg">
               召喚を待つ守護神
             </h2>

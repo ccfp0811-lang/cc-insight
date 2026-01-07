@@ -347,6 +347,9 @@
 
 .nebula-bg {
   animation: nebula-drift 20s ease-in-out infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 /* 優しいフローティング */
@@ -361,6 +364,8 @@
 
 .floating-card {
   animation: float-gentle 4s ease-in-out infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* 虹色グローボーダー */
