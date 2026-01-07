@@ -22,16 +22,25 @@ export default function SideJobTeamPage() {
   const [period, setPeriod] = useState("week");
   const [teamStats, setTeamStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const reports = await getReportsByPeriod(period, "fukugyou");
         const stats = calculateTeamStats(reports, "fukugyou");
         setTeamStats(stats);
-      } catch (error) {
+      } catch (error: any) {
         console.error("データ取得エラー:", error);
+        if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+          setError("データを準備中です（Firestoreインデックス構築中）。数分後に再度アクセスしてください。");
+        } else if (error.code === 'permission-denied') {
+          setError("データへのアクセス権限がありません。ログイン状態を確認してください。");
+        } else {
+          setError("データの取得に失敗しました。ページをリロードしてください。");
+        }
       } finally {
         setLoading(false);
       }

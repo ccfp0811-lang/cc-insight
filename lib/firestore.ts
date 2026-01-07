@@ -495,6 +495,8 @@ export async function getUserStats(userId: string): Promise<{
 }> {
   try {
     // ユーザーの全レポートを取得
+    // ⚠️ 複合インデックス必須: userId (ASC) + createdAt (DESC)
+    // インデックス作成URL: コンソールエラーに表示されるリンクをクリック
     const q = query(
       collection(db, "reports"),
       where("userId", "==", userId),
