@@ -432,6 +432,10 @@ export interface User {
   approvedAt?: Timestamp;
   approvedBy?: string;
   lastLoginAt?: Timestamp;
+  // 🔥 ストリークシステム
+  currentStreak?: number; // 現在の連続日数
+  maxStreak?: number; // 過去最高記録
+  lastReportDate?: Timestamp; // 最後の報告日時
 }
 
 // 全ユーザーを取得
