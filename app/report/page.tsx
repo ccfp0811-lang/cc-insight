@@ -122,12 +122,27 @@ export default function ReportPage() {
 
     try {
       console.log('📝 Firestoreにデータ送信中...');
-      const reportData = isXTeam ? {
-        // ユーザー情報（自動付与）
+      
+      // ⚠️ 安全装置：undefined防止のフォールバック処理
+      // 優先順位: ① userProfile.realName → ② userProfile.displayName → ③ user.displayName → ④ "名前未設定メンバー"
+      const safeRealName = userProfile.realName || userProfile.displayName || user.displayName || "名前未設定メンバー";
+      const safeName = userProfile.displayName || user.displayName || "名前未設定";
+      const safeEmail = user.email || "メールアドレス未設定";
+      
+      console.log('✅ バリデーション完了', {
         userId: user.uid,
-        userEmail: user.email,
-        realName: userProfile.realName,
-        name: userProfile.displayName,
+        realName: safeRealName,
+        name: safeName,
+        email: safeEmail,
+        team: selectedTeam
+      });
+      
+      const reportData = isXTeam ? {
+        // ユーザー情報（自動付与・undefined完全防止）
+        userId: user.uid,
+        userEmail: safeEmail,
+        realName: safeRealName,
+        name: safeName,
         team: selectedTeam,
         teamType: "x",
         date: date,
@@ -136,19 +151,19 @@ export default function ReportPage() {
         postUrls: xPostUrls.filter(url => url.trim() !== ""),
         likeCount: parseInt(xLikeCount) || 0,
         replyCount: parseInt(xReplyCount) || 0,
-        todayComment: xTodayComment,
+        todayComment: xTodayComment || "",
         createdAt: serverTimestamp(),
       } : {
-        // ユーザー情報（自動付与）
+        // ユーザー情報（自動付与・undefined完全防止）
         userId: user.uid,
-        userEmail: user.email,
-        realName: userProfile.realName,
-        name: userProfile.displayName,
+        userEmail: safeEmail,
+        realName: safeRealName,
+        name: safeName,
         team: selectedTeam,
         teamType: "shorts",
         date: date,
         // Shortsデータ
-        accountId: accountId,
+        accountId: accountId || "",
         igViews: parseInt(igViews) || 0,
         igProfileAccess: parseInt(igProfileAccess) || 0,
         igExternalTaps: parseInt(igExternalTaps) || 0,
@@ -157,7 +172,7 @@ export default function ReportPage() {
         igFollowers: parseInt(igFollowers) || 0,
         ytFollowers: parseInt(ytFollowers) || 0,
         tiktokFollowers: parseInt(tiktokFollowers) || 0,
-        todayComment: todayComment,
+        todayComment: todayComment || "",
         createdAt: serverTimestamp(),
       };
 
