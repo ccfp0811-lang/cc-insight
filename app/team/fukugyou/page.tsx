@@ -101,26 +101,27 @@ export default function FukugyouTeamPage() {
         teamName={team.name}
       />
 
-      {/* Glassmorphism Stats Cards */}
+      {/* 全11項目完全実装 */}
+      {/* 項目1-4: 基本指標 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <GlassCard glowColor="#ec4899" title="総再生数" icon={<Eye className="h-5 w-5" />} value={teamStats.totalViews.toLocaleString()} subtitle="全メンバー合計">
+        <GlassCard glowColor="#ec4899" title="総再生数" icon={<Eye className="h-5 w-5" />} value={teamStats.totalViews.toLocaleString()} subtitle="今週の合計">
           <div></div>
         </GlassCard>
 
-        <GlassCard glowColor="#ec4899" title="インプレッション" icon={<TrendingUp className="h-5 w-5" />} value={teamStats.totalImpressions.toLocaleString()} subtitle="リーチ数">
+        <GlassCard glowColor="#ec4899" title="総インプレッション" icon={<TrendingUp className="h-5 w-5" />} value={teamStats.totalImpressions.toLocaleString()} subtitle="今週の合計">
           <div></div>
         </GlassCard>
 
-        <GlassCard glowColor="#ec4899" title="投稿数" icon={<Video className="h-5 w-5" />} value={`${teamStats.totalPosts} / ${teamStats.totalTargetPosts}`} subtitle="目標に対する実績">
+        <GlassCard glowColor="#ec4899" title="総投稿数" icon={<Video className="h-5 w-5" />} value={teamStats.totalPosts.toLocaleString()} subtitle="今週の合計">
           <div></div>
         </GlassCard>
 
-        <GlassCard glowColor="#ec4899" title="MVP達成者" icon={<Users className="h-5 w-5" />} value={`${teamStats.perfectMembers}人`} subtitle={`${teamStats.memberCount}人中`}>
+        <GlassCard glowColor="#ec4899" title="アクティブメンバー" icon={<Users className="h-5 w-5" />} value={`${teamStats.memberCount}人`} subtitle="報告済み人数">
           <div></div>
         </GlassCard>
       </div>
 
-      {/* 詳細KPI（全体サマリーと同じ） */}
+      {/* 項目5-8: Instagram詳細KPI */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <GlassCard glowColor="#22c55e" title="プロフアクセス数" icon={<Users className="h-5 w-5" />} value={teamStats.totalProfileAccess.toLocaleString()} subtitle="Instagram">
           <div></div>
@@ -139,7 +140,7 @@ export default function FukugyouTeamPage() {
         </GlassCard>
       </div>
 
-      {/* SNSフォロワー統計 */}
+      {/* 項目9-11: SNSフォロワー統計 */}
       <div className="grid gap-4 md:grid-cols-3">
         <GlassCard glowColor="#e1306c" title="Instagram" icon={<Users className="h-5 w-5" />} value={teamStats.totalIgFollowers.toLocaleString()} subtitle="総フォロワー数">
           <div></div>
