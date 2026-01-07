@@ -55,11 +55,6 @@ const adminNavItems = [
     icon: Shield,
   },
   {
-    title: "全体サマリー",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
     title: "副業チーム",
     subtitle: "IG / TT / YT",
     href: "/dashboard/side-job",
