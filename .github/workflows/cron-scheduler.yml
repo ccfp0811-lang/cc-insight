@@ -1,0 +1,54 @@
+name: CC Insight Cron Scheduler
+
+on:
+  schedule:
+    # デイリーサマリー: 毎日 0:00 UTC (日本時間 9:00)
+    - cron: '0 0 * * *'
+    # 10日・20日判定: 毎月11日・21日 0:00 UTC (日本時間 9:00)
+    - cron: '0 0 11,21 * *'
+    # 月末判定: 毎月1日 0:00 UTC (日本時間 9:00)
+    - cron: '0 0 1 * *'
+    # エスカレーション確認: 6時間おき
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  daily-summary:
+    if: github.event.schedule == '0 0 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Daily Summary API
+        run: |
+          curl -X GET https://cc-insight.vercel.app/api/cron/daily-summary \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+
+  decade-judgment:
+    if: github.event.schedule == '0 0 11,21 * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Decade Judgment API
+        run: |
+          curl -X GET https://cc-insight.vercel.app/api/cron/decade-judgment \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+
+  month-end-judgment:
+    if: github.event.schedule == '0 0 1 * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Month End Judgment API
+        run: |
+          curl -X GET https://cc-insight.vercel.app/api/cron/month-end-judgment \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+
+  check-escalation:
+    if: github.event.schedule == '0 */6 * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Check Escalation API
+        run: |
+          curl -X GET https://cc-insight.vercel.app/api/cron/check-escalation \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"

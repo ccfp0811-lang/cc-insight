@@ -13,6 +13,13 @@ import { notifyDecadeJudgmentToCEO, notifyDecadeJudgmentToAdminChannel } from "@
 
 export async function GET(request: Request) {
   try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!process.env.CRON_SECRET || token !== process.env.CRON_SECRET) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
     console.log("🎯 ADAPT判定Cron実行開始...");
     
     // 現在のデカードを取得（前日基準）
