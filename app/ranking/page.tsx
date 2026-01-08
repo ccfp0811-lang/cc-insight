@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Trophy, Eye, Users, TrendingUp, Heart, MessageCircle, Instagram,
-  Youtube, Crown, Medal, Award, ChevronRight, Zap, Calendar, Target
+  Youtube, Crown, Medal, Award, ChevronRight, Zap, Calendar, Target, Download
 } from "lucide-react";
 import { subscribeToReports, calculateTeamStats, teams, Report, getBulkUserGuardianProfiles } from "@/lib/firestore";
 import { useAuth } from "@/lib/auth-context";
@@ -25,6 +25,70 @@ const getMedalIcon = (rank: number) => {
     default:
       return <span className="text-lg font-bold text-slate-400">#{rank}</span>;
   }
+};
+
+// 📊 CSV出力関数
+const exportToCSV = (teamName: string, members: any[], isShorts: boolean, period: string) => {
+  // ヘッダー行を作成
+  const headers = isShorts
+    ? ['順位', '名前', 'エナジー', '再生数', 'プロフアクセス', '交流数', 'フォロワー増加', '投稿数', '報告回数', '守護神']
+    : ['順位', '名前', 'エナジー', 'いいね回り', 'リプライ回り', '総活動量', '投稿数', '報告回数', '守護神'];
+
+  // データ行を作成
+  const rows = members.map((member, index) => {
+    const baseData = [
+      index + 1,
+      member.name || '',
+      member.energy || 0
+    ];
+
+    if (isShorts) {
+      return [
+        ...baseData,
+        member.views || 0,
+        member.profileAccess || 0,
+        member.interactions || 0,
+        member.followerGrowth || 0,
+        member.posts || 0,
+        member.reports || 0,
+        member.guardianData?.name || '未召喚'
+      ];
+    } else {
+      return [
+        ...baseData,
+        member.likes || 0,
+        member.replies || 0,
+        (member.likes || 0) + (member.replies || 0),
+        member.posts || 0,
+        member.reports || 0,
+        member.guardianData?.name || '未召喚'
+      ];
+    }
+  });
+
+  // CSV文字列を作成
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.join(','))
+  ].join('\n');
+
+  // BOMを追加してExcelで正しく開けるようにする
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+  // ダウンロードリンクを作成
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD形式
+  const periodLabel = period === 'week' ? '週間' : '月間';
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${teamName}_${periodLabel}ランキング_${timestamp}.csv`);
+  link.style.visibility = 'hidden';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 export default function AllTeamsRankingPage() {
@@ -306,7 +370,7 @@ export default function AllTeamsRankingPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className="w-4 h-4 rounded-full animate-pulse"
                     style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}` }}
                   />
@@ -314,8 +378,23 @@ export default function AllTeamsRankingPage() {
                     {name}
                   </h2>
                 </div>
-                <div className="text-sm text-slate-300">
-                  {totalMembers}人のメンバー
+
+                {/* CSV出力ボタン */}
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-slate-300 hidden sm:block">
+                    {totalMembers}人のメンバー
+                  </div>
+                  <button
+                    onClick={() => exportToCSV(name, sortedMembers, isShorts, period)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95 glass-bg border border-white/10 hover:border-white/30"
+                    style={{
+                      color: color
+                    }}
+                    title="CSVダウンロード"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">CSV出力</span>
+                  </button>
                 </div>
               </div>
 
