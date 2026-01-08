@@ -68,7 +68,7 @@ export default function AllTeamsRankingPage() {
         setReports(data);
         
         // 🔧 N+1問題解決: 各レポートのuserIdから守護神データを一括取得
-        const uniqueUserIds = Array.from(new Set(data.map(r => r.userId).filter(Boolean)));
+        const uniqueUserIds = Array.from(new Set(data.map(r => r.userId).filter(Boolean))) as string[];
 
         // 一括取得関数を使用（Firestoreクエリ数を大幅削減）
         const profiles = await getBulkUserGuardianProfiles(uniqueUserIds);

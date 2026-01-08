@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { GlassCard } from "@/components/glass-card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import {
   AlertTriangle,
   Shield
 } from "lucide-react";
-import { ContentLoader } from "@/components/ui/loading-spinner";
+import { ContentLoader, ButtonLoader } from "@/components/ui/loading-spinner";
 import { getAllUsers, User as UserProfile, getReportsByPeriod, Report } from "@/lib/firestore";
 import { 
   getTeamConfig, 
@@ -47,6 +48,7 @@ interface MemberStatus {
 }
 
 export default function ActiveMonitorPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [members, setMembers] = useState<MemberStatus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -441,7 +443,7 @@ export default function ActiveMonitorPage() {
         >
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <ButtonLoader />
               更新中...
             </>
           ) : (
