@@ -83,19 +83,19 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   // 保護されたページ（認証必須）
   return (
     <AuthGuard>
-      <div className="flex min-h-dvh cosmic-bg relative">
+      <div className="flex min-h-dvh cosmic-bg relative overflow-hidden">
         {/* 星雲背景レイヤー */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="nebula-bg absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-3xl opacity-30" 
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="nebula-bg absolute top-0 left-1/4 w-[min(600px,150vw)] h-[min(600px,150vw)] rounded-full blur-3xl opacity-30"
                style={{
                  background: 'radial-gradient(ellipse at center, rgba(139, 92, 246, 0.3) 0%, rgba(236, 72, 153, 0.2) 40%, transparent 70%)'
-               }} 
+               }}
           />
-          <div className="nebula-bg absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-3xl opacity-20"
+          <div className="nebula-bg absolute bottom-0 right-1/4 w-[min(500px,120vw)] h-[min(500px,120vw)] rounded-full blur-3xl opacity-20"
                style={{
                  background: 'radial-gradient(ellipse at center, rgba(34, 211, 238, 0.2) 0%, rgba(168, 85, 247, 0.15) 40%, transparent 70%)',
                  animationDelay: '5s'
-               }} 
+               }}
           />
         </div>
 

@@ -71,7 +71,7 @@ export function DailyLoginModal({ isOpen, onClose, bonusData }: DailyLoginModalP
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden"
           style={{ backdropFilter: 'blur(8px)' }}
         >
           {/* 背景オーバーレイ */}
@@ -87,22 +87,22 @@ export function DailyLoginModal({ isOpen, onClose, bonusData }: DailyLoginModalP
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {[...Array(config.particles)].map((_, i) => {
               const angle = (i * 360) / config.particles;
-              const radius = 150 + Math.random() * 100;
+              const radius = typeof window !== 'undefined' ? Math.min(150, window.innerWidth * 0.3) : 150;
               const delay = i * 0.02;
-              
+
               return (
                 <motion.div
                   key={i}
-                  initial={{ 
-                    opacity: 1, 
-                    x: "50vw", 
-                    y: "50vh", 
+                  initial={{
+                    opacity: 1,
+                    x: "50%",
+                    y: "50%",
                     scale: 1,
                   }}
                   animate={{
                     opacity: [1, 1, 0],
-                    x: `calc(50vw + ${Math.cos((angle * Math.PI) / 180) * radius}px)`,
-                    y: `calc(50vh + ${Math.sin((angle * Math.PI) / 180) * radius}px)`,
+                    x: `calc(50% + ${Math.cos((angle * Math.PI) / 180) * radius}px)`,
+                    y: `calc(50% + ${Math.sin((angle * Math.PI) / 180) * radius}px)`,
                     scale: [1, 1.5, 0],
                   }}
                   transition={{ 

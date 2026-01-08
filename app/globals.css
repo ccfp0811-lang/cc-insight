@@ -134,6 +134,8 @@
     background: #020617 !important;
     min-height: 100vh;
     overscroll-behavior: none;
+    overflow-x: hidden !important;
+    max-width: 100vw;
     color: #f1f5f9 !important;
   }
 
@@ -142,19 +144,20 @@
     content: '';
     position: fixed;
     inset: 0;
-    background-image: 
+    background-image:
       radial-gradient(2px 2px at 20% 30%, white, transparent),
       radial-gradient(2px 2px at 60% 70%, white, transparent),
       radial-gradient(1px 1px at 50% 50%, white, transparent),
       radial-gradient(1px 1px at 80% 10%, white, transparent),
       radial-gradient(2px 2px at 90% 60%, white, transparent),
       radial-gradient(1px 1px at 30% 80%, white, transparent);
-    background-size: 200% 200%;
-    background-position: 0% 0%;
+    background-size: 150% 150%;
+    background-position: center center;
     animation: stars-float 60s ease-in-out infinite;
     opacity: 0.3;
     pointer-events: none;
     z-index: -1;
+    overflow: hidden;
   }
 
   @keyframes stars-float {
@@ -333,16 +336,16 @@
    🌌 Phase 1: 星雲＆魔法陣エフェクト
    ===================================== */
 
-/* 星雲ドリフトアニメーション */
+/* 星雲ドリフトアニメーション (スマホ対応: scale制限) */
 @keyframes nebula-drift {
   0% {
     transform: translate(0, 0) rotate(0deg) scale(1);
   }
   33% {
-    transform: translate(30px, -20px) rotate(120deg) scale(1.1);
+    transform: translate(15px, -10px) rotate(120deg) scale(1.05);
   }
   66% {
-    transform: translate(-20px, 30px) rotate(240deg) scale(0.9);
+    transform: translate(-10px, 15px) rotate(240deg) scale(0.95);
   }
   100% {
     transform: translate(0, 0) rotate(360deg) scale(1);
