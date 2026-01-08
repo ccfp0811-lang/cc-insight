@@ -101,13 +101,21 @@ async function sendCriticalAlertToSlack(
 
 export async function GET(request: Request) {
   try {
+    // 🔐 セキュリティ強化: Vercel Cron専用ヘッダーチェック + Bearer token
+    const vercelCronHeader = request.headers.get('x-vercel-cron');
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
-    
-    if (!process.env.CRON_SECRET || token !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Vercel Cronからのリクエストでない、または認証トークンが一致しない場合は拒否
+    if (!vercelCronHeader || !process.env.CRON_SECRET || token !== process.env.CRON_SECRET) {
+      console.warn('⚠️ 不正なCronアクセス試行を検出:', {
+        hasVercelHeader: !!vercelCronHeader,
+        hasToken: !!token,
+        timestamp: new Date().toISOString(),
+      });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    
+
     console.log('🔍 エスカレーション確認Cron実行開始...');
     
     // Firestoreから全ユーザーを取得

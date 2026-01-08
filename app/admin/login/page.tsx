@@ -31,7 +31,9 @@ export default function AdminLoginPage() {
       } else if (err.code === "auth/wrong-password") {
         setError("パスワードが正しくありません");
       } else if (err.message.includes("停止")) {
-        setError(err.message);
+        // 🔐 アカウント停止メッセージは一般化
+        console.error("管理者アカウント停止エラー:", err.message);
+        setError("このアカウントは現在利用できません。");
       } else {
         setError("ログインに失敗しました。もう一度お試しください。");
       }

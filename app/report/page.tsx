@@ -201,13 +201,15 @@ export default function ReportPage() {
       const currentTiktokFollowers = parseInt(tiktokFollowers) || 0;
       const currentXFollowers = parseInt(xFollowers) || 0;
       
-      const igFollowerGrowth = isEditMode ? currentIgFollowers : 
+      // 🔒 編集モード: 既存レポートのフォロワー数を維持（二重カウント防止）
+      // 🆕 新規作成: 前回レポートとの差分を計算
+      const igFollowerGrowth = isEditMode ? (existingReport?.igFollowers || 0) :
         Math.max(0, currentIgFollowers - (previousFollowers?.igFollowers || 0));
-      const ytFollowerGrowth = isEditMode ? currentYtFollowers : 
+      const ytFollowerGrowth = isEditMode ? (existingReport?.ytFollowers || 0) :
         Math.max(0, currentYtFollowers - (previousFollowers?.ytFollowers || 0));
-      const tiktokFollowerGrowth = isEditMode ? currentTiktokFollowers : 
+      const tiktokFollowerGrowth = isEditMode ? (existingReport?.tiktokFollowers || 0) :
         Math.max(0, currentTiktokFollowers - (previousFollowers?.tiktokFollowers || 0));
-      const xFollowerGrowth = isEditMode ? currentXFollowers : 
+      const xFollowerGrowth = isEditMode ? (existingReport?.xFollowers || 0) :
         Math.max(0, currentXFollowers - (previousFollowers?.xFollowers || 0));
       
       console.log('📊 フォロワー数差分計算', {
@@ -343,10 +345,13 @@ export default function ReportPage() {
       // フォームリセット
       resetForm();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      // 🔐 セキュリティ: エラー詳細はログのみに記録し、ユーザーには一般的なメッセージのみ表示
       console.error("送信エラー詳細:", err);
-      console.error("エラーメッセージ:", errorMessage);
-      setError(`送信に失敗: ${errorMessage}`);
+      if (err instanceof Error) {
+        console.error("エラーメッセージ:", err.message);
+        console.error("エラースタック:", err.stack);
+      }
+      setError("送信に失敗しました。しばらく時間をおいてから再度お試しください。");
     } finally {
       setSubmitting(false);
     }
