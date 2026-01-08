@@ -44,8 +44,13 @@ export default function RegisterPage() {
       setError("所属チームを選択してください");
       return;
     }
-    if (password.length < 6) {
-      setError("パスワードは6文字以上で入力してください");
+    // 🔐 パスワード検証強化: 8文字以上、英数字必須
+    if (password.length < 8) {
+      setError("パスワードは8文字以上で入力してください");
+      return;
+    }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("パスワードは英字と数字の両方を含む必要があります");
       return;
     }
     if (password !== confirmPassword) {

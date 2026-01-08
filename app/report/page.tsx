@@ -158,6 +158,13 @@ export default function ReportPage() {
       setError("チーム設定が必要です。管理者に連絡してチームを設定してもらってください。");
       return;
     }
+
+    // 🔒 修正回数制限チェック（1日3回まで）
+    const MAX_MODIFY_COUNT = 3;
+    if (isEditMode && modifyCount >= MAX_MODIFY_COUNT) {
+      setError(`日報の修正は1日${MAX_MODIFY_COUNT}回までです。修正回数: ${modifyCount}/${MAX_MODIFY_COUNT}`);
+      return;
+    }
     
     console.log('🚀 送信開始', { name: userProfile.displayName, selectedTeam, date });
     setSubmitting(true);
@@ -243,12 +250,17 @@ export default function ReportPage() {
 
       // 🔒 既存レポートがある場合は更新、ない場合は新規作成
       if (existingReport && isEditMode) {
-        const result = await updateReport(existingReport.id, baseData as any);
+        // 🔒 修正回数をインクリメント
+        const updatedData = {
+          ...baseData,
+          modifyCount: modifyCount + 1
+        };
+        const result = await updateReport(existingReport.id, updatedData as any);
         if (!result.success) {
           setError(result.message);
           return;
         }
-        console.log('✅ レポート更新完了:', result.message);
+        console.log('✅ レポート更新完了:', result.message, `修正回数: ${modifyCount + 1}`);
       } else {
         // 新規作成用のデータ
         const reportData = {
@@ -260,6 +272,7 @@ export default function ReportPage() {
           teamType: isXTeam ? ("x" as const) : ("shorts" as const),
           date: date,
           ...baseData,
+          modifyCount: 0, // 🔒 新規作成時は修正回数0
           createdAt: serverTimestamp(),
         };
         
