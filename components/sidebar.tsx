@@ -69,14 +69,8 @@ const adminNavItems = [
     icon: Search,
   },
   {
-    title: "メンバーメッセージ",
-    subtitle: "今日の一言",
-    href: "/admin/messages",
-    icon: MessageCircle,
-  },
-  {
     title: "DMチャット",
-    subtitle: "双方向メッセージ",
+    subtitle: "メンバーとやり取り",
     href: "/admin/dm",
     icon: MessageSquare,
   },

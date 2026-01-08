@@ -34,6 +34,7 @@ interface DMMessage {
 
 interface UserInfo {
   uid: string;
+  realName: string;
   displayName: string;
   team: string;
   teamName: string;
@@ -104,6 +105,7 @@ export default function AdminDMPage() {
           const team = teams.find(t => t.id === u.team);
           return {
             uid: u.uid,
+            realName: u.realName,
             displayName: u.displayName,
             team: u.team,
             teamName: team?.name || u.team,
@@ -202,7 +204,7 @@ export default function AdminDMPage() {
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <p className="font-semibold">{u.displayName}</p>
+                        <p className="font-semibold">{u.realName}（{u.displayName}）</p>
                         <span 
                           className="text-xs px-2 py-0.5 rounded-full"
                           style={{ 
