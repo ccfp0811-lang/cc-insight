@@ -92,7 +92,8 @@ export default function GuardiansPage() {
     }
     
     loadProfile();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   async function loadProfile() {
     if (!user) return;
