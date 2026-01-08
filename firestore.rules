@@ -1,0 +1,138 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ヘルパー関数: 認証済みユーザーか
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ヘルパー関数: 管理者か
+    function isAdmin() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ヘルパー関数: 自分のデータか
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ヘルパー関数: 承認済みユーザーか
+    function isApproved() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true;
+    }
+
+    // users collection
+    match /users/{userId} {
+      // 読み取り: 認証済みユーザーなら誰でも
+      allow read: if isAuthenticated();
+
+      // 作成: 自分のドキュメントのみ、role フィールドは含めない
+      allow create: if isOwner(userId) &&
+                       !('role' in request.resource.data);
+
+      // 更新: 自分のドキュメントのみ、ただし role 更新は管理者のみ
+      allow update: if isOwner(userId) &&
+                       (!('role' in request.resource.data) || isAdmin());
+
+      // 削除: 管理者のみ
+      allow delete: if isAdmin();
+    }
+
+    // reports collection
+    match /reports/{reportId} {
+      // 読み取り: 認証済みユーザーなら誰でも
+      allow read: if isAuthenticated();
+
+      // 作成: 承認済みユーザーのみ、自分の userId のみ
+      allow create: if isApproved() &&
+                       request.resource.data.userId == request.auth.uid;
+
+      // 更新: 自分のレポートのみ、userId 変更不可
+      allow update: if isOwner(resource.data.userId) &&
+                       request.resource.data.userId == resource.data.userId;
+
+      // 削除: 自分のレポートまたは管理者
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // guardianProfiles collection
+    match /guardianProfiles/{profileId} {
+      // 読み取り: 認証済みユーザーなら誰でも
+      allow read: if isAuthenticated();
+
+      // 作成: 自分のプロフィールのみ
+      allow create: if isOwner(profileId);
+
+      // 更新: 自分のプロフィールのみ
+      allow update: if isOwner(profileId);
+
+      // 削除: 管理者のみ
+      allow delete: if isAdmin();
+    }
+
+    // guardianCollection collection
+    match /guardianCollection/{collectionId} {
+      // 読み取り: 認証済みユーザーなら誰でも
+      allow read: if isAuthenticated();
+
+      // 作成: 自分のコレクションのみ
+      allow create: if isOwner(collectionId);
+
+      // 更新: 自分のコレクションのみ
+      allow update: if isOwner(collectionId);
+
+      // 削除: 管理者のみ
+      allow delete: if isAdmin();
+    }
+
+    // messages collection (DM機能)
+    match /messages/{messageId} {
+      // 読み取り: 送信者または受信者または管理者
+      allow read: if isAuthenticated() &&
+                     (resource.data.senderId == request.auth.uid ||
+                      resource.data.receiverId == request.auth.uid ||
+                      isAdmin());
+
+      // 作成: 承認済みユーザーのみ、senderId は自分のみ
+      allow create: if isApproved() &&
+                       request.resource.data.senderId == request.auth.uid;
+
+      // 更新: 送信者のみ（既読状態の更新など）
+      allow update: if isOwner(resource.data.senderId);
+
+      // 削除: 送信者または管理者
+      allow delete: if isOwner(resource.data.senderId) || isAdmin();
+    }
+
+    // penaltyHistory collection
+    match /penaltyHistory/{penaltyId} {
+      // 読み取り: 対象ユーザー本人または管理者
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+
+      // 作成・更新・削除: 管理者のみ
+      allow create, update, delete: if isAdmin();
+    }
+
+    // activityLogs collection
+    match /activityLogs/{logId} {
+      // 読み取り: 管理者のみ
+      allow read: if isAdmin();
+
+      // 作成: システムのみ（実際には Admin SDK から）
+      allow create: if false;
+
+      // 更新・削除: 禁止
+      allow update, delete: if false;
+    }
+
+    // その他のコレクションはデフォルトで禁止
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

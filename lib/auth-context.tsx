@@ -50,6 +50,13 @@ const pendingAllowedRoutes = ["/pending-approval", "/verify-email"];
 const adminOnlyRoutes = ["/admin", "/dashboard"]; // 管理者専用
 const memberRoutes = ["/mypage", "/ranking"]; // メンバー専用
 
+// 管理者専用ルートのチェック（サブパス含む）
+function isAdminOnlyRoute(path: string): boolean {
+  return adminOnlyRoutes.some(route =>
+    path === route || path.startsWith(route + '/')
+  );
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -287,7 +294,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
     const isPendingAllowed = pendingAllowedRoutes.includes(pathname);
-    const isAdminRoute = adminOnlyRoutes.some(route => pathname.startsWith(route));
+    const isAdminRoute = isAdminOnlyRoute(pathname); // 修正: 新しい関数を使用
     const isMemberRoute = memberRoutes.some(route => pathname.startsWith(route));
 
     // 未認証で保護ルート
@@ -310,7 +317,9 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       }
 
       // 管理者ルートへの不正アクセス（一般メンバーは/mypageへ強制リダイレクト）
+      // サブパス含めて厳密にチェック
       if (isAdminRoute && userProfile.role !== "admin") {
+        console.warn(`Unauthorized admin route access blocked: ${pathname}`);
         router.push("/mypage");
         return;
       }
