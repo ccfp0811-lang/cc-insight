@@ -319,12 +319,12 @@ export default function AdminAuditPage() {
 
       {/* 詳細モーダル（簡易版） */}
       {selectedUser && (
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 md:pb-4 pb-[calc(var(--bottom-nav-height)+1rem)]"
           onClick={() => setSelectedUser(null)}
         >
-          <div 
-            className="glass-premium rounded-2xl border border-white/20 p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+          <div
+            className="glass-premium rounded-2xl border border-white/20 p-6 max-w-2xl w-full max-h-[calc(100vh-var(--bottom-nav-height)-2rem)] md:max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-2xl font-bold text-white mb-4">
