@@ -32,7 +32,7 @@ import {
   TrendingUp,
   Zap
 } from "lucide-react";
-import { teams, processReportWithEnergy } from "@/lib/firestore";
+import { teams, processReportWithEnergy, getTodayReport, updateReport, Report } from "@/lib/firestore";
 import EnergyToast from "@/components/energy-toast";
 
 export default function ReportPage() {
@@ -44,6 +44,11 @@ export default function ReportPage() {
   const [error, setError] = useState("");
   const [earnedXP, setEarnedXP] = useState(0);
   const [showEnergyToast, setShowEnergyToast] = useState(false);
+  
+  // 🔒 デイリーロック用
+  const [existingReport, setExistingReport] = useState<Report | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [modifyCount, setModifyCount] = useState(0);
   
   // ログインユーザーのチームを自動設定
   const selectedTeam = userProfile?.team || "";
@@ -74,6 +79,49 @@ export default function ReportPage() {
   const selectedTeamData = teams.find(t => t.id === selectedTeam);
   const isXTeam = selectedTeamData?.type === "x";
   const teamColor = selectedTeamData?.color || "#ec4899";
+
+  // 🔒 既存レポートチェック（デイリーロック）
+  useEffect(() => {
+    const checkExistingReport = async () => {
+      if (!user || !selectedTeam) return;
+      
+      const existing = await getTodayReport(user.uid, date);
+      if (existing) {
+        setExistingReport(existing);
+        setIsEditMode(true);
+        setModifyCount((existing as any).modifyCount || 0);
+        
+        // フォームに既存データを充填
+        if (isXTeam) {
+          setXPostCount(String(existing.postCount || ""));
+          setXPostUrls(existing.postUrls || [""]);
+          setXLikeCount(String(existing.likeCount || ""));
+          setXReplyCount(String(existing.replyCount || ""));
+          setXTodayComment(existing.todayComment || "");
+        } else {
+          setAccountId(existing.accountId || "");
+          setIgViews(String(existing.igViews || ""));
+          setIgProfileAccess(String(existing.igProfileAccess || ""));
+          setIgExternalTaps(String(existing.igExternalTaps || ""));
+          setIgInteractions(String(existing.igInteractions || ""));
+          setWeeklyStories(String(existing.weeklyStories || ""));
+          setIgFollowers(String(existing.igFollowers || ""));
+          setYtFollowers(String(existing.ytFollowers || ""));
+          setTiktokFollowers(String(existing.tiktokFollowers || ""));
+          setIgPosts(String(existing.igPosts || ""));
+          setYtPosts(String(existing.ytPosts || ""));
+          setTiktokPosts(String(existing.tiktokPosts || ""));
+          setTodayComment(existing.todayComment || "");
+        }
+      } else {
+        setExistingReport(null);
+        setIsEditMode(false);
+        setModifyCount(0);
+      }
+    };
+    
+    checkExistingReport();
+  }, [user, date, selectedTeam, isXTeam]);
 
   const addUrlField = () => {
     setXPostUrls([...xPostUrls, ""]);
@@ -132,32 +180,13 @@ export default function ReportPage() {
         team: selectedTeam
       });
       
-      const reportData = isXTeam ? {
-        // ユーザー情報（自動付与・undefined完全防止）
-        userId: user.uid,
-        userEmail: safeEmail,
-        realName: safeRealName,
-        name: safeName,
-        team: selectedTeam,
-        teamType: "x",
-        date: date,
-        // X運用データ
+      const baseData = isXTeam ? {
         postCount: parseInt(xPostCount) || 0,
         postUrls: xPostUrls.filter(url => url.trim() !== ""),
         likeCount: parseInt(xLikeCount) || 0,
         replyCount: parseInt(xReplyCount) || 0,
         todayComment: xTodayComment || "",
-        createdAt: serverTimestamp(),
       } : {
-        // ユーザー情報（自動付与・undefined完全防止）
-        userId: user.uid,
-        userEmail: safeEmail,
-        realName: safeRealName,
-        name: safeName,
-        team: selectedTeam,
-        teamType: "shorts",
-        date: date,
-        // Shortsデータ
         accountId: accountId || "",
         igViews: parseInt(igViews) || 0,
         igProfileAccess: parseInt(igProfileAccess) || 0,
@@ -167,27 +196,50 @@ export default function ReportPage() {
         igFollowers: parseInt(igFollowers) || 0,
         ytFollowers: parseInt(ytFollowers) || 0,
         tiktokFollowers: parseInt(tiktokFollowers) || 0,
-        // ✅ SNS別投稿数（菅原副社長の要求）
         igPosts: parseInt(igPosts) || 0,
         ytPosts: parseInt(ytPosts) || 0,
         tiktokPosts: parseInt(tiktokPosts) || 0,
         todayComment: todayComment || "",
-        createdAt: serverTimestamp(),
       };
 
-      await Promise.race([
-        addDoc(collection(db, "reports"), reportData),
-        timeout
-      ]);
-
-      // エナジー獲得処理
-      try {
-        const result = await processReportWithEnergy(user.uid);
-        if (result.energyEarned > 0) {
-          setEarnedXP(result.energyEarned);
+      // 🔒 既存レポートがある場合は更新、ない場合は新規作成
+      if (existingReport && isEditMode) {
+        const result = await updateReport(existingReport.id, baseData as any);
+        if (!result.success) {
+          setError(result.message);
+          return;
         }
-      } catch (energyError) {
-        console.error("エナジー処理エラー:", energyError);
+        console.log('✅ レポート更新完了:', result.message);
+      } else {
+        // 新規作成用のデータ
+        const reportData = {
+          userId: user.uid,
+          userEmail: safeEmail,
+          realName: safeRealName,
+          name: safeName,
+          team: selectedTeam,
+          teamType: isXTeam ? ("x" as const) : ("shorts" as const),
+          date: date,
+          ...baseData,
+          createdAt: serverTimestamp(),
+        };
+        
+        await Promise.race([
+          addDoc(collection(db, "reports"), reportData),
+          timeout
+        ]);
+      }
+
+      // エナジー獲得処理（新規作成時のみ）
+      if (!isEditMode) {
+        try {
+          const result = await processReportWithEnergy(user.uid);
+          if (result.energyEarned > 0) {
+            setEarnedXP(result.energyEarned);
+          }
+        } catch (energyError) {
+          console.error("エナジー処理エラー:", energyError);
+        }
       }
 
       setSuccess(true);

@@ -907,6 +907,68 @@ export async function hasAnyGuardian(userId: string): Promise<boolean> {
 }
 
 // =====================================
+// 🔒 デイリーロックシステム（Phase 1）
+// =====================================
+
+/**
+ * 今日のレポートを取得（1日1回制限チェック用）
+ */
+export async function getTodayReport(userId: string, date: string): Promise<Report | null> {
+  try {
+    const q = query(
+      collection(db, "reports"),
+      where("userId", "==", userId),
+      where("date", "==", date)
+    );
+    
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Report;
+  } catch (error) {
+    console.error("Error fetching today's report:", error);
+    return null;
+  }
+}
+
+/**
+ * レポートを更新（修正モード用）
+ */
+export async function updateReport(
+  reportId: string,
+  updates: Partial<Report>
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const reportRef = doc(db, "reports", reportId);
+    const reportDoc = await getDoc(reportRef);
+    
+    if (!reportDoc.exists()) {
+      return { success: false, message: "レポートが見つかりません" };
+    }
+    
+    const currentData = reportDoc.data();
+    const modifyCount = (currentData.modifyCount || 0) + 1;
+    
+    await setDoc(reportRef, {
+      ...updates,
+      modifyCount,
+      modifiedAt: serverTimestamp(),
+    }, { merge: true });
+    
+    return { 
+      success: true, 
+      message: modifyCount >= 3 
+        ? "⚠️ 守護神が不信感を抱いています" 
+        : "レポートを修正しました" 
+    };
+  } catch (error) {
+    console.error("Error updating report:", error);
+    return { success: false, message: "更新に失敗しました" };
+  }
+}
+
+// =====================================
 // 🔄 後方互換性関数（旧バージョン用）
 // =====================================
 
