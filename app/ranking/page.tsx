@@ -12,6 +12,7 @@ import { GUARDIANS, ATTRIBUTES, getGuardianImagePath, GuardianId, EVOLUTION_STAG
 import { MemberDetailModal } from "@/components/member-detail-modal";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ContentLoader } from "@/components/ui/loading-spinner";
+import { cachedFetch } from "@/lib/firestore-cache";
 
 const getMedalIcon = (rank: number) => {
   switch (rank) {
@@ -66,12 +67,17 @@ export default function AllTeamsRankingPage() {
     try {
       const unsubscribe = subscribeToReports(async (data) => {
         setReports(data);
-        
+
         // 🔧 N+1問題解決: 各レポートのuserIdから守護神データを一括取得
         const uniqueUserIds = Array.from(new Set(data.map(r => r.userId).filter(Boolean))) as string[];
 
-        // 一括取得関数を使用（Firestoreクエリ数を大幅削減）
-        const profiles = await getBulkUserGuardianProfiles(uniqueUserIds);
+        // 💾 キャッシュ戦略: 5分間キャッシュで読み取り大幅削減
+        const cacheKey = `guardian-profiles-${uniqueUserIds.sort().join(',')}`;
+        const profiles = await cachedFetch(
+          cacheKey,
+          () => getBulkUserGuardianProfiles(uniqueUserIds),
+          5 * 60 * 1000 // 5分TTL
+        );
 
         setGuardianProfiles(profiles);
         setLoading(false);
