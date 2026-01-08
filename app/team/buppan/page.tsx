@@ -130,7 +130,7 @@ export default function BuppanTeamPage() {
               className={
                 period === option.id
                   ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-[0_0_15px_rgba(236,72,153,0.5)]"
-                  : ""
+                  : "!text-[oklch(0.145_0_0)] dark:!text-[oklch(0.985_0_0)]"
               }
             >
               {option.label}
