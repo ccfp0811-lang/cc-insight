@@ -681,6 +681,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={xPostCount}
                             onChange={(e) => setXPostCount(e.target.value)}
@@ -695,6 +696,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={xLikeCount}
                             onChange={(e) => setXLikeCount(e.target.value)}
@@ -709,6 +711,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={xReplyCount}
                             onChange={(e) => setXReplyCount(e.target.value)}
@@ -819,6 +822,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={igViews}
                             onChange={(e) => setIgViews(e.target.value)}
@@ -834,6 +838,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={igProfileAccess}
                             onChange={(e) => setIgProfileAccess(e.target.value)}
@@ -849,6 +854,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={igExternalTaps}
                             onChange={(e) => setIgExternalTaps(e.target.value)}
@@ -864,6 +870,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={igInteractions}
                             onChange={(e) => setIgInteractions(e.target.value)}
@@ -879,6 +886,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={weeklyStories}
                             onChange={(e) => setWeeklyStories(e.target.value)}
@@ -894,6 +902,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={igFollowers}
                             onChange={(e) => setIgFollowers(e.target.value)}
@@ -913,6 +922,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={ytFollowers}
                             onChange={(e) => setYtFollowers(e.target.value)}
@@ -930,6 +940,7 @@ export default function ReportPage() {
                           </Label>
                           <Input
                             type="number"
+                            inputMode="numeric"
                             placeholder="0"
                             value={tiktokFollowers}
                             onChange={(e) => setTiktokFollowers(e.target.value)}
