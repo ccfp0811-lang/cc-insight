@@ -179,9 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // メール認証送信（日本語設定）
       auth.languageCode = 'ja';
-      await sendEmailVerification(newUser, {
-        url: `${window.location.origin}/verify-email?lang=ja`,
-      });
+      await sendEmailVerification(newUser);
 
       router.push("/verify-email");
     } catch (error) {
