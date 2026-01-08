@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,15 +31,7 @@ export default function AdminMessagesPage() {
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
   const [selectedMember, setSelectedMember] = useState<MessageReport | null>(null);
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/admin/login");
-      return;
-    }
-    loadMessages();
-  }, [user, router]);
-
-  async function loadMessages() {
+  const loadMessages = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -84,7 +76,15 @@ export default function AdminMessagesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      router.push("/admin/login");
+      return;
+    }
+    loadMessages();
+  }, [user, router, loadMessages]);
 
   const filteredMessages = selectedTeam === "all" 
     ? messages 

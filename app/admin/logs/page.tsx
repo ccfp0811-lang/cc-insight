@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -34,26 +34,7 @@ export default function AdminLogsPage() {
   const [selectedLog, setSelectedLog] = useState<ErrorLog | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    // 管理者チェック
-    if (!user || userProfile?.role !== "admin") {
-      router.push("/");
-      return;
-    }
-
-    loadLogs();
-  }, [user, userProfile]);
-
-  useEffect(() => {
-    // フィルター適用
-    if (selectedLevel === "all") {
-      setFilteredLogs(logs);
-    } else {
-      setFilteredLogs(logs.filter(log => log.level === selectedLevel));
-    }
-  }, [selectedLevel, logs]);
-
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     try {
       setLoading(true);
       const fetchedLogs = await getErrorLogs(200);
@@ -63,7 +44,26 @@ export default function AdminLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // 管理者チェック
+    if (!user || userProfile?.role !== "admin") {
+      router.push("/");
+      return;
+    }
+
+    loadLogs();
+  }, [user, userProfile, router, loadLogs]);
+
+  useEffect(() => {
+    // フィルター適用
+    if (selectedLevel === "all") {
+      setFilteredLogs(logs);
+    } else {
+      setFilteredLogs(logs.filter(log => log.level === selectedLevel));
+    }
+  }, [selectedLevel, logs]);
 
   const handleDeleteOldLogs = async () => {
     if (!confirm("30日以上前のログを削除しますか？")) return;

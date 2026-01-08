@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { User, teams, Report, getUserStats, getUserGuardianProfile } from "@/lib/firestore";
 import { getDoc, doc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
@@ -46,13 +46,7 @@ export default function UserDetailPage() {
   const [badges, setBadges] = useState<any[]>([]);
   const [guardianData, setGuardianData] = useState<any>(null);
 
-  useEffect(() => {
-    if (userId) {
-      loadUserData();
-    }
-  }, [userId]);
-
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -111,7 +105,13 @@ export default function UserDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      loadUserData();
+    }
+  }, [userId, loadUserData]);
 
   const calculateStats = (reports: Report[]) => {
     // 週別統計（過去8週）

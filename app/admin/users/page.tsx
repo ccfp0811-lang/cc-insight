@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { getAllUsers, updateUserStatus, updateUserRole, teams, User } from "@/lib/firestore";
 import { GlassCard } from "@/components/glass-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Users, 
-  Search, 
-  Check, 
-  X, 
-  Ban, 
-  Shield, 
+import {
+  Users,
+  Search,
+  Check,
+  X,
+  Ban,
+  Shield,
   Mail,
   Calendar,
   Filter,
@@ -31,12 +31,7 @@ export default function AdminUsersPage() {
   const [teamFilter, setTeamFilter] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // ユーザー一覧を取得
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       const allUsers = await getAllUsers();
@@ -47,7 +42,12 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // ユーザー一覧を取得
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   // フィルタリング処理
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,17 +58,42 @@ export default function AdminDMPage() {
     { id: "buppan", name: "スマホ物販チーム", color: "#eab308" },
   ];
 
+  const loadUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const allUsers = await getAllUsers();
+      const memberUsers = allUsers
+        .filter(u => u.status === "approved" && u.role === "member")
+        .map(u => {
+          const team = teams.find(t => t.id === u.team);
+          return {
+            uid: u.uid,
+            realName: u.realName,
+            displayName: u.displayName,
+            team: u.team,
+            teamName: team?.name || u.team,
+            teamColor: team?.color || "#ec4899",
+          };
+        });
+      setUsers(memberUsers);
+    } catch (error) {
+      console.error("ユーザー取得エラー:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!user || userProfile?.role !== "admin") {
       router.push("/admin/login");
       return;
     }
     loadUsers();
-  }, [user, userProfile, router]);
+  }, [user, userProfile, router, loadUsers]);
 
   useEffect(() => {
     if (!selectedUser) return;
-    
+
     // リアルタイムでメッセージを監視
     const q = query(
       collection(db, "dm_messages"),
@@ -94,31 +119,6 @@ export default function AdminDMPage() {
 
     return () => unsubscribe();
   }, [selectedUser, user]);
-
-  async function loadUsers() {
-    try {
-      setLoading(true);
-      const allUsers = await getAllUsers();
-      const memberUsers = allUsers
-        .filter(u => u.status === "approved" && u.role === "member")
-        .map(u => {
-          const team = teams.find(t => t.id === u.team);
-          return {
-            uid: u.uid,
-            realName: u.realName,
-            displayName: u.displayName,
-            team: u.team,
-            teamName: team?.name || u.team,
-            teamColor: team?.color || "#ec4899",
-          };
-        });
-      setUsers(memberUsers);
-    } catch (error) {
-      console.error("ユーザー取得エラー:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function sendMessage() {
     if (!newMessage.trim() || !selectedUser || !user || !userProfile) return;
