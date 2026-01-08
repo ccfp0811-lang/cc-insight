@@ -22,7 +22,7 @@ const periodOptions = [
   { id: "custom", label: "期間指定" },
 ];
 
-export default function FukugyouTeamPage() {
+export default function TaishokuTeamPage() {
   const [period, setPeriod] = useState("week");
   const [teamStats, setTeamStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
