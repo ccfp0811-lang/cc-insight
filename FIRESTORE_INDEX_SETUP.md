@@ -38,13 +38,35 @@ https://console.firebase.google.com/v1/r/project/cc-insight/firestore/indexes?cr
 
 ### 2. reports コレクション（報告）
 
-すでに作成されている可能性が高いですが、念のため確認してください。
+**必要なインデックス:**
+- `userId` (Ascending) + `date` (Descending)
+
+**エラーメッセージ:**
+```
+FirebaseError: The query requires an index.
+```
+
+**作成URL（エラーから自動生成）:**
+```
+https://console.firebase.google.com/v1/r/project/cc-insight/firestore/indexes?create_composite=Ckpwcm9qZWN0cy9jYy1pbnNpZ2h0L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9yZXBvcnRzL2luZGV4ZXMvXxABGgoKBnVzZXJJZBABGggKBGRhdGUQAhoMCghfX25hbWVfXxAC
+```
+
+### 3. dm_messages コレクション（DMメッセージ）
 
 **必要なインデックス:**
-- `userId` (Ascending)
-- `date` (Descending)
+- `participants` (Array) + `createdAt` (Ascending)
 
-### 3. errorLogs コレクション（エラーログ）
+**エラーメッセージ:**
+```
+FirebaseError: The query requires an index.
+```
+
+**作成URL（エラーから自動生成）:**
+```
+https://console.firebase.google.com/v1/r/project/cc-insight/firestore/indexes?create_composite=Ck5wcm9qZWN0cy9jYy1pbnNpZ2h0L2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9kbV9tZXNzYWdlcy9pbmRleGVzL18QARoQCgxwYXJ0aWNpcGFudHMYARoNCgljcmVhdGVkQXQQARoMCghfX25hbWVfXxAB
+```
+
+### 4. errorLogs コレクション（エラーログ）
 
 **必要なインデックス:**
 - `level` (Ascending)

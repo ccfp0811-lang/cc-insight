@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -185,13 +185,15 @@ export default function AllTeamsRankingPage() {
   }
 
   // チームごとの統計を計算（filteredReportsを使用）
-  const teamStats = teams.map(team => {
-    const stats = calculateTeamStats(filteredReports, team.id);
-    return {
-      ...team,
-      stats
-    };
-  });
+  const teamStats = useMemo(() => {
+    return teams.map(team => {
+      const stats = calculateTeamStats(filteredReports, team.id);
+      return {
+        ...team,
+        stats
+      };
+    });
+  }, [filteredReports]);
 
   // 🎯 自分の順位を計算
   useEffect(() => {
