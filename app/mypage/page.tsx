@@ -26,6 +26,7 @@ import {
   StreakHistoryModal,
 } from "@/components/energy-history-modal";
 import { PageLoader } from "@/components/ui/loading-spinner";
+import { StreakWarningBanner } from "@/components/streak-celebration";
 
 // カウントアップコンポーネント
 function AnimatedNumber({ value }: { value: number }) {
@@ -51,6 +52,12 @@ export default function MyPage() {
   const [profile, setProfile] = useState<UserGuardianProfile | null>(null);
   const [todayReported, setTodayReported] = useState(false);
   const [todayEnergy, setTodayEnergy] = useState(0);
+  const [streakWarning, setStreakWarning] = useState<{
+    shouldWarn: boolean;
+    message: string;
+    urgency: "info" | "warning" | "critical";
+  } | null>(null);
+  const [showWarning, setShowWarning] = useState(true);
 
   // モーダル状態管理
   const [energyModalOpen, setEnergyModalOpen] = useState(false);
@@ -77,6 +84,31 @@ export default function MyPage() {
           setTodayReported(true);
           // 今日のエナジー取得（報告から計算）
           setTodayEnergy((todayReport as any).earnedEnergy || 0);
+        } else {
+          // 📅 ストリーク警告ロジック
+          const { getLastReport } = await import("@/lib/firestore");
+          const lastReport = await getLastReport(user.uid);
+
+          if (lastReport) {
+            const lastReportDate = new Date(lastReport.date);
+            const now = new Date();
+            const hoursSinceLastReport = (now.getTime() - lastReportDate.getTime()) / (1000 * 60 * 60);
+
+            // 20時間経過で警告開始
+            if (hoursSinceLastReport >= 20 && hoursSinceLastReport < 23) {
+              setStreakWarning({
+                shouldWarn: true,
+                message: `⚠️ ストリーク継続の危機！あと${Math.floor(24 - hoursSinceLastReport)}時間以内に報告しないと${data?.streak.current || 0}日連続が途切れます`,
+                urgency: "warning"
+              });
+            } else if (hoursSinceLastReport >= 23) {
+              setStreakWarning({
+                shouldWarn: true,
+                message: `🚨 緊急！あと${Math.floor(60 - ((hoursSinceLastReport - 23) * 60))}分でストリークが途切れます！今すぐ報告してください`,
+                urgency: "critical"
+              });
+            }
+          }
         }
       } catch (error) {
         console.error("データ取得エラー:", error);
@@ -268,6 +300,14 @@ export default function MyPage() {
           {user.displayName || user.email}さんの冒険の記録
         </p>
       </div>
+
+      {/* ⚠️ ストリーク警告バナー */}
+      {streakWarning && showWarning && (
+        <StreakWarningBanner
+          warning={streakWarning}
+          onClose={() => setShowWarning(false)}
+        />
+      )}
 
       {/* 📅 今日の報告ステータス */}
       {todayReported ? (

@@ -1155,6 +1155,29 @@ export async function getTodayReport(userId: string, date: string): Promise<Repo
 }
 
 /**
+ * ユーザーの最新のレポートを取得
+ */
+export async function getLastReport(userId: string): Promise<Report | null> {
+  try {
+    const q = query(
+      collection(db, "reports"),
+      where("userId", "==", userId),
+      orderBy("date", "desc"),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Report;
+  } catch (error) {
+    console.error("Error fetching last report:", error);
+    return null;
+  }
+}
+
+/**
  * レポートを更新（修正モード用）
  */
 export async function updateReport(
