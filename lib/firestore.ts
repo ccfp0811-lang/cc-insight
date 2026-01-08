@@ -1084,3 +1084,197 @@ export async function hasGuardian(userId: string): Promise<boolean> {
 export async function isProfileCompleted(userId: string): Promise<boolean> {
   return isGuardianProfileInitialized(userId);
 }
+
+// =====================================
+// ⚠️ ペナルティシステム（Phase 6）
+// =====================================
+
+export interface PenaltyStatus {
+  isPenalized: boolean;
+  isCursed: boolean;              // 守護神が呪われている（赤化）
+  penaltyReason?: string;
+  penalizedAt?: Timestamp;
+  penalizedBy?: string;           // 管理者UID
+  energyConfiscated?: number;     // 没収されたエナジー
+  wasReset: boolean;              // Stage 0にリセットされた
+}
+
+/**
+ * ユーザーにペナルティを適用
+ */
+export async function applyPenalty(
+  userId: string,
+  adminUid: string,
+  reason: string,
+  options: {
+    confiscateEnergy?: number;    // 没収するエナジー量
+    resetGuardian?: boolean;      // Stage 0にリセットするか
+    curseGuardian?: boolean;      // 守護神を呪うか
+  } = {}
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const profile = await getUserGuardianProfile(userId);
+    if (!profile) {
+      return { success: false, message: "ユーザープロファイルが見つかりません" };
+    }
+
+    const penalty: PenaltyStatus = {
+      isPenalized: true,
+      isCursed: options.curseGuardian || false,
+      penaltyReason: reason,
+      penalizedAt: Timestamp.now(),
+      penalizedBy: adminUid,
+      energyConfiscated: options.confiscateEnergy || 0,
+      wasReset: options.resetGuardian || false,
+    };
+
+    // エナジー没収
+    if (options.confiscateEnergy && options.confiscateEnergy > 0) {
+      profile.energy.current = Math.max(0, profile.energy.current - options.confiscateEnergy);
+    }
+
+    // 守護神リセット
+    if (options.resetGuardian && profile.activeGuardianId) {
+      const activeGuardian = profile.guardians[profile.activeGuardianId as keyof typeof profile.guardians];
+      if (activeGuardian) {
+        activeGuardian.stage = 0;
+        activeGuardian.investedEnergy = 0;
+      }
+    }
+
+    // 守護神を呪う
+    if (options.curseGuardian && profile.activeGuardianId) {
+      const activeGuardian = profile.guardians[profile.activeGuardianId as keyof typeof profile.guardians];
+      if (activeGuardian) {
+        (activeGuardian as any).isCursed = true;
+      }
+    }
+
+    // プロファイル更新
+    await setDoc(doc(db, "users", userId), {
+      guardianProfile: profile,
+      penaltyStatus: penalty,
+      status: "suspended",  // ユーザーを停止状態に
+    }, { merge: true });
+
+    return {
+      success: true,
+      message: `ペナルティを適用しました: ${reason}`,
+    };
+  } catch (error) {
+    console.error("Error applying penalty:", error);
+    return { success: false, message: "ペナルティ適用に失敗しました" };
+  }
+}
+
+/**
+ * ペナルティを解除
+ */
+export async function removePenalty(
+  userId: string,
+  adminUid: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const profile = await getUserGuardianProfile(userId);
+    if (!profile) {
+      return { success: false, message: "ユーザープロファイルが見つかりません" };
+    }
+
+    // 呪いを解除
+    if (profile.activeGuardianId) {
+      const activeGuardian = profile.guardians[profile.activeGuardianId as keyof typeof profile.guardians];
+      if (activeGuardian) {
+        (activeGuardian as any).isCursed = false;
+      }
+    }
+
+    await setDoc(doc(db, "users", userId), {
+      guardianProfile: profile,
+      penaltyStatus: {
+        isPenalized: false,
+        isCursed: false,
+        wasReset: false,
+      },
+      status: "approved",  // ユーザーを復帰
+    }, { merge: true });
+
+    return {
+      success: true,
+      message: "ペナルティを解除しました",
+    };
+  } catch (error) {
+    console.error("Error removing penalty:", error);
+    return { success: false, message: "ペナルティ解除に失敗しました" };
+  }
+}
+
+/**
+ * ペナルティステータスを取得
+ */
+export async function getPenaltyStatus(userId: string): Promise<PenaltyStatus | null> {
+  try {
+    const userDoc = await getDoc(doc(db, "users", userId));
+    if (!userDoc.exists()) return null;
+    
+    const userData = userDoc.data();
+    return (userData.penaltyStatus as PenaltyStatus) || {
+      isPenalized: false,
+      isCursed: false,
+      wasReset: false,
+    };
+  } catch (error) {
+    console.error("Error fetching penalty status:", error);
+    return null;
+  }
+}
+
+/**
+ * 虚偽報告フラグを設定
+ */
+export async function markAsFalseReport(
+  userId: string,
+  adminUid: string,
+  reason: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    await setDoc(doc(db, "users", userId), {
+      falseReportFlag: {
+        flagged: true,
+        reason,
+        flaggedAt: Timestamp.now(),
+        flaggedBy: adminUid,
+      },
+    }, { merge: true });
+
+    return {
+      success: true,
+      message: "虚偽報告フラグを設定しました",
+    };
+  } catch (error) {
+    console.error("Error marking false report:", error);
+    return { success: false, message: "フラグ設定に失敗しました" };
+  }
+}
+
+/**
+ * 虚偽報告フラグを解除
+ */
+export async function clearFalseReportFlag(
+  userId: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    await setDoc(doc(db, "users", userId), {
+      falseReportFlag: {
+        flagged: false,
+      },
+    }, { merge: true });
+
+    return {
+      success: true,
+      message: "虚偽報告フラグを解除しました",
+    };
+  } catch (error) {
+    console.error("Error clearing false report flag:", error);
+    return { success: false, message: "フラグ解除に失敗しました" };
+  }
+}
