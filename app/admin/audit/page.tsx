@@ -12,14 +12,17 @@ import {
   subscribeToReports,
   type Report
 } from "@/lib/firestore";
-import { 
-  Shield, 
-  AlertTriangle, 
-  TrendingUp, 
+import {
+  Shield,
+  AlertTriangle,
+  TrendingUp,
   Zap,
   ChevronRight,
   Loader2,
-  Eye
+  Eye,
+  Clock,
+  Database,
+  Download
 } from "lucide-react";
 import { GlassCard } from "@/components/glass-card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +36,13 @@ interface UserAuditData {
   recentReports: Report[];
   anomalyFlags: AnomalyFlags;
   consistencyScore: number; // 言行一致スコア（0-100）
+  dataIntegrityIssues: DataIntegrityIssue[]; // 🆕 データ整合性の問題
+}
+
+interface DataIntegrityIssue {
+  type: "duplicate" | "timeAnomaly" | "missingData" | "stageMismatch";
+  severity: "high" | "medium" | "low";
+  message: string;
 }
 
 export default function AdminAuditPage() {
@@ -41,6 +51,8 @@ export default function AdminAuditPage() {
   const [loading, setLoading] = useState(true);
   const [auditData, setAuditData] = useState<UserAuditData[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserAuditData | null>(null);
+  const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null); // 🆕 最終チェック時刻
+  const [autoRefresh, setAutoRefresh] = useState(false); // 🆕 自動更新ON/OFF
 
   useEffect(() => {
     // 管理者チェック
@@ -51,6 +63,18 @@ export default function AdminAuditPage() {
 
     loadAuditData();
   }, [user, userProfile]);
+
+  // 🆕 自動更新（5分ごと）
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      console.log("自動更新: 監査データを再読込中...");
+      loadAuditData();
+    }, 5 * 60 * 1000); // 5分
+
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
 
   const loadAuditData = async () => {
     try {
@@ -88,6 +112,14 @@ export default function AdminAuditPage() {
           reports
         );
 
+        // 🆕 データ整合性チェック
+        const integrityIssues = checkDataIntegrity(
+          u.uid,
+          profile.energy.current,
+          guardianStage,
+          reports
+        );
+
         auditResults.push({
           userId: u.uid,
           displayName: u.displayName,
@@ -96,7 +128,8 @@ export default function AdminAuditPage() {
           guardianStage,
           recentReports: reports,
           anomalyFlags: anomalies,
-          consistencyScore
+          consistencyScore,
+          dataIntegrityIssues: integrityIssues
         });
       }
 
@@ -108,11 +141,83 @@ export default function AdminAuditPage() {
       });
 
       setAuditData(auditResults);
+      setLastCheckTime(new Date()); // 🆕 最終チェック時刻を更新
     } catch (error) {
       console.error("監査データ取得エラー:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 🆕 データ整合性チェック
+  const checkDataIntegrity = (
+    userId: string,
+    energy: number,
+    guardianStage: number,
+    reports: Report[]
+  ): DataIntegrityIssue[] => {
+    const issues: DataIntegrityIssue[] = [];
+
+    // 1. 重複レポートチェック（同日に複数回報告）
+    const dateMap = new Map<string, number>();
+    reports.forEach(report => {
+      const count = dateMap.get(report.date) || 0;
+      dateMap.set(report.date, count + 1);
+    });
+    dateMap.forEach((count, date) => {
+      if (count > 1) {
+        issues.push({
+          type: "duplicate",
+          severity: "medium",
+          message: `${date}に${count}回の重複報告`
+        });
+      }
+    });
+
+    // 2. 時系列異常チェック
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    reports.forEach(report => {
+      const reportDate = new Date(report.date);
+      if (reportDate > now) {
+        issues.push({
+          type: "timeAnomaly",
+          severity: "high",
+          message: `未来日付の報告: ${report.date}`
+        });
+      } else if (reportDate < oneMonthAgo) {
+        issues.push({
+          type: "timeAnomaly",
+          severity: "low",
+          message: `30日以上前の報告: ${report.date}`
+        });
+      }
+    });
+
+    // 3. データ欠損チェック
+    reports.forEach((report, index) => {
+      const hasViews = (report.igViews || 0) > 0 || (report.postCount || 0) > 0;
+      const hasPosts = ((report.igPosts || 0) + (report.ytPosts || 0) + (report.tiktokPosts || 0)) > 0;
+      if (!hasViews && !hasPosts) {
+        issues.push({
+          type: "missingData",
+          severity: "medium",
+          message: `${report.date}: 活動データが全てゼロ`
+        });
+      }
+    });
+
+    // 4. Stage/Energyミスマッチ
+    const expectedEnergy = guardianStage * 100;
+    if (guardianStage > 0 && Math.abs(energy - expectedEnergy) > expectedEnergy * 2) {
+      issues.push({
+        type: "stageMismatch",
+        severity: "high",
+        message: `Stage ${guardianStage}に対してエナジー ${energy}E が異常（期待値: ${expectedEnergy}E）`
+      });
+    }
+
+    return issues;
   };
 
   // 言行一致スコア計算（0-100）
@@ -151,6 +256,54 @@ export default function AdminAuditPage() {
     return "要調査";
   };
 
+  // 🆕 CSVエクスポート
+  const exportAuditToCSV = () => {
+    const headers = [
+      'ユーザー名',
+      'チーム',
+      'Stage',
+      'エナジー',
+      '言行一致スコア',
+      '評価',
+      '異常値数',
+      'データ整合性問題数',
+      '過去7日間の報告回数'
+    ];
+
+    const rows = auditData.map(data => {
+      const anomalyCount = Object.values(data.anomalyFlags).filter(Boolean).length;
+      return [
+        data.displayName,
+        data.team,
+        data.guardianStage,
+        data.energy,
+        data.consistencyScore,
+        getConsistencyLabel(data.consistencyScore),
+        anomalyCount,
+        data.dataIntegrityIssues.length,
+        data.recentReports.length
+      ];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().split('T')[0];
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `監査データ_${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-4">
@@ -169,15 +322,47 @@ export default function AdminAuditPage() {
             🔍 管理者監査ダッシュボード
           </h1>
           <p className="text-slate-300">全メンバーの異常値と言行一致スコアを監視</p>
+          {lastCheckTime && (
+            <div className="flex items-center gap-2 mt-2">
+              <Clock className="w-4 h-4 text-slate-400" />
+              <p className="text-xs text-slate-400">
+                最終チェック: {lastCheckTime.toLocaleString('ja-JP')}
+              </p>
+            </div>
+          )}
         </div>
-        <Button onClick={loadAuditData} className="bg-gradient-to-r from-purple-500 to-pink-500">
-          <Shield className="w-4 h-4 mr-2" />
-          再読込
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* 自動更新トグル */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="w-4 h-4 rounded border-2 border-purple-500 bg-transparent checked:bg-purple-500 cursor-pointer"
+            />
+            <span className="text-sm text-slate-300">自動更新（5分毎）</span>
+          </label>
+
+          {/* CSV出力 */}
+          <Button
+            onClick={exportAuditToCSV}
+            variant="outline"
+            className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            CSV出力
+          </Button>
+
+          {/* 再読込 */}
+          <Button onClick={loadAuditData} className="bg-gradient-to-r from-purple-500 to-pink-500">
+            <Shield className="w-4 h-4 mr-2" />
+            再読込
+          </Button>
+        </div>
       </div>
 
       {/* サマリー */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <GlassCard glowColor="#EF4444" className="p-6">
           <div className="flex items-center gap-3 mb-2">
             <AlertTriangle className="w-6 h-6 text-red-400" />
@@ -215,6 +400,20 @@ export default function AdminAuditPage() {
           </div>
           <p className="text-3xl font-bold text-green-400">
             {auditData.filter(d => d.consistencyScore >= 80).length}人
+          </p>
+        </GlassCard>
+
+        {/* 🆕 データ整合性カード */}
+        <GlassCard glowColor="#06B6D4" className="p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Database className="w-6 h-6 text-cyan-400" />
+            <p className="text-sm text-slate-300">データ問題</p>
+          </div>
+          <p className="text-3xl font-bold text-cyan-400">
+            {auditData.filter(d => d.dataIntegrityIssues.length > 0).length}人
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            計{auditData.reduce((sum, d) => sum + d.dataIntegrityIssues.length, 0)}件
           </p>
         </GlassCard>
       </div>
@@ -311,6 +510,30 @@ export default function AdminAuditPage() {
                     )}
                   </div>
                 )}
+
+                {/* 🆕 データ整合性問題表示 */}
+                {data.dataIntegrityIssues.length > 0 && (
+                  <div className="mt-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Database className="w-4 h-4 text-cyan-400" />
+                      <span className="text-xs font-bold text-cyan-400">
+                        データ整合性問題 ({data.dataIntegrityIssues.length}件)
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      {data.dataIntegrityIssues.slice(0, 2).map((issue, idx) => (
+                        <p key={idx} className="text-xs text-slate-300">
+                          {issue.severity === "high" ? "🔴" : issue.severity === "medium" ? "🟡" : "⚪️"} {issue.message}
+                        </p>
+                      ))}
+                      {data.dataIntegrityIssues.length > 2 && (
+                        <p className="text-xs text-slate-400">
+                          他{data.dataIntegrityIssues.length - 2}件...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -368,6 +591,47 @@ export default function AdminAuditPage() {
                   </div>
                 )}
               </div>
+
+              {/* 🆕 データ整合性問題詳細 */}
+              {selectedUser.dataIntegrityIssues.length > 0 && (
+                <div className="glass-bg p-4 rounded-xl">
+                  <p className="text-sm font-bold text-white mb-2">
+                    データ整合性問題 ({selectedUser.dataIntegrityIssues.length}件)
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {selectedUser.dataIntegrityIssues.map((issue, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded-lg text-xs ${
+                          issue.severity === "high"
+                            ? "bg-red-500/10 text-red-400"
+                            : issue.severity === "medium"
+                            ? "bg-yellow-500/10 text-yellow-400"
+                            : "bg-slate-500/10 text-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <span>
+                            {issue.severity === "high" ? "🔴" : issue.severity === "medium" ? "🟡" : "⚪️"}
+                          </span>
+                          <div>
+                            <p className="font-bold mb-1">
+                              {issue.type === "duplicate"
+                                ? "重複報告"
+                                : issue.type === "timeAnomaly"
+                                ? "時系列異常"
+                                : issue.type === "missingData"
+                                ? "データ欠損"
+                                : "Stage/Energyミスマッチ"}
+                            </p>
+                            <p>{issue.message}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <Button
                 onClick={() => setSelectedUser(null)}
