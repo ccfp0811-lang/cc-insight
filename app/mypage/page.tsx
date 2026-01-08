@@ -15,7 +15,7 @@ import {
   getPlaceholderStyle,
   getGuardianImagePath
 } from "@/lib/guardian-collection";
-import { Loader2, Sparkles, Crown } from "lucide-react";
+import { Sparkles, Crown } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useSpring, useTransform } from "framer-motion";
@@ -24,6 +24,7 @@ import {
   TotalEarnedModal,
   StreakHistoryModal,
 } from "@/components/energy-history-modal";
+import { PageLoader } from "@/components/ui/loading-spinner";
 
 // カウントアップコンポーネント
 function AnimatedNumber({ value }: { value: number }) {
@@ -74,25 +75,7 @@ export default function MyPage() {
   }, [user]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 relative">
-        {/* 読み込み中の星雲エフェクト */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-32 h-32 rounded-full bg-purple-500/20 blur-3xl animate-pulse" />
-        </div>
-        
-        <div className="relative">
-          <Loader2 className="w-16 h-16 animate-spin text-pink-500" 
-                   style={{
-                     filter: 'drop-shadow(0 0 20px rgba(236, 72, 153, 0.6))'
-                   }} />
-          <div className="absolute inset-0 w-16 h-16 rounded-full border-2 border-purple-500/30 animate-ping" />
-        </div>
-        
-        <p className="text-lg text-gray-300 font-medium">マイページを読み込み中...</p>
-        <p className="text-xs text-gray-500">宇宙の彼方から情報を取得しています</p>
-      </div>
-    );
+    return <PageLoader text="マイページを読み込み中..." />;
   }
 
   if (!user || !profile) {

@@ -8,20 +8,20 @@ import { db } from "@/lib/firebase";
 import { GlassCard } from "@/components/glass-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ArrowLeft, 
-  TrendingUp, 
+import {
+  ArrowLeft,
+  TrendingUp,
   Calendar,
   Eye,
   FileText,
   Flame,
   Target,
   Trophy,
-  Loader2,
   Shield,
   Mail,
   Zap
 } from "lucide-react";
+import { ContentLoader } from "@/components/ui/loading-spinner";
 import { GUARDIANS, ATTRIBUTES, getGuardianImagePath, GuardianId, EVOLUTION_STAGES } from "@/lib/guardian-collection";
 import { getBadgeRarityColor, BADGES } from "@/lib/gamification";
 
@@ -185,12 +185,7 @@ export default function UserDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-        <p className="text-sm text-muted-foreground">ユーザー情報を読み込み中...</p>
-      </div>
-    );
+    return <ContentLoader text="ユーザー情報を読み込み中..." />;
   }
 
   if (!user) {

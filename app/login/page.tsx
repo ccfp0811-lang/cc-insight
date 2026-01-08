@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sword, Mail, Lock, AlertCircle, Sparkles, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { ButtonLoader } from "@/components/ui/loading-spinner";
 
 export default function MemberLoginPage() {
   const [email, setEmail] = useState("");
@@ -140,11 +141,11 @@ export default function MemberLoginPage() {
             >
               {/* ホバー時のアニメーション */}
               <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
+
               <span className="relative z-10 flex items-center justify-center gap-2">
                 {loading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <ButtonLoader />
                     冒険の扉を開いています...
                   </>
                 ) : (

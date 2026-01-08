@@ -1,10 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { 
-  User, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
+import {
+  User,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
   signOut,
@@ -13,6 +13,7 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { useRouter, usePathname } from "next/navigation";
+import { PageLoader } from "@/components/ui/loading-spinner";
 
 // ユーザープロファイル型定義
 export interface UserProfile {
@@ -327,14 +328,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   }, [user, userProfile, loading, pathname, router]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">読み込み中...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="読み込み中..." />;
   }
 
   return <>{children}</>;
@@ -352,14 +346,7 @@ export function AdminGuard({ children }: { children: ReactNode }) {
   }, [userProfile, loading, router]);
 
   if (loading || userProfile?.role !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">権限を確認中...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="権限を確認中..." />;
   }
 
   return <>{children}</>;

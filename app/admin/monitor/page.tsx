@@ -11,22 +11,21 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
 import { GlassCard } from "@/components/glass-card";
 import { Button } from "@/components/ui/button";
-import { 
-  AlertCircle, 
-  CheckCircle2, 
-  Clock, 
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
   TrendingDown,
   User,
   Calendar,
   MessageCircle,
-  Loader2,
   ExternalLink,
   AlertTriangle,
   Shield
 } from "lucide-react";
+import { ContentLoader } from "@/components/ui/loading-spinner";
 import { getAllUsers, User as UserProfile, getReportsByPeriod, Report } from "@/lib/firestore";
 import { 
   getTeamConfig, 
@@ -48,22 +47,16 @@ interface MemberStatus {
 }
 
 export default function ActiveMonitorPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [members, setMembers] = useState<MemberStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "danger" | "warning" | "attention" | "safe">("all");
 
   useEffect(() => {
-    if (!authLoading && (!user || userProfile?.role !== "admin")) {
-      router.push("/admin/login");
-      return;
-    }
-
-    if (user && userProfile?.role === "admin") {
+    if (user) {
       loadMemberStatuses();
     }
-  }, [user, userProfile, authLoading, router]);
+  }, [user]);
 
   const loadMemberStatuses = async () => {
     setLoading(true);
@@ -199,13 +192,8 @@ export default function ActiveMonitorPage() {
     return "報告なし";
   };
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-        <p className="text-sm text-muted-foreground">監視データを読み込み中...</p>
-      </div>
-    );
+  if (loading) {
+    return <ContentLoader text="監視データを読み込み中..." />;
   }
 
   return (

@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  Trophy, Eye, Users, TrendingUp, Heart, MessageCircle, Instagram, 
-  Youtube, Loader2, Crown, Medal, Award, ChevronRight, Zap, Calendar
+import {
+  Trophy, Eye, Users, TrendingUp, Heart, MessageCircle, Instagram,
+  Youtube, Crown, Medal, Award, ChevronRight, Zap, Calendar
 } from "lucide-react";
 import { subscribeToReports, calculateTeamStats, teams, Report, getBulkUserGuardianProfiles } from "@/lib/firestore";
 import { useAuth } from "@/lib/auth-context";
 import { GUARDIANS, ATTRIBUTES, getGuardianImagePath, GuardianId, EVOLUTION_STAGES } from "@/lib/guardian-collection";
 import { MemberDetailModal } from "@/components/member-detail-modal";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ContentLoader } from "@/components/ui/loading-spinner";
 
 const getMedalIcon = (rank: number) => {
   switch (rank) {
@@ -101,12 +102,7 @@ export default function AllTeamsRankingPage() {
   }
 
   if (loading || authLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
-        <p className="text-sm text-slate-300">ランキングを読み込み中...</p>
-      </div>
-    );
+    return <ContentLoader text="ランキングを読み込み中..." />;
   }
 
   // チームごとの統計を計算（filteredReportsを使用）

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { UserPlus, Mail, Lock, User, Users } from "lucide-react";
+import { ButtonLoader } from "@/components/ui/loading-spinner";
 
 type TeamType = "fukugyou" | "taishoku" | "buppan";
 
@@ -242,7 +243,7 @@ export default function RegisterPage() {
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <ButtonLoader />
                   登録中...
                 </div>
               ) : (
