@@ -1,7 +1,8 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useEffect } from "react";
+import { X, AlertTriangle, TrendingUp, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getUserRecentReports, detectAnomalies, Report, AnomalyFlags } from "@/lib/firestore";
 
 interface MemberDetailModalProps {
   member: any;
@@ -20,6 +21,37 @@ export function MemberDetailModal({
   teamName,
   isShorts
 }: MemberDetailModalProps) {
+  const [recentReports, setRecentReports] = useState<Report[]>([]);
+  const [anomalies, setAnomalies] = useState<AnomalyFlags | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // 👁️ 過去履歴と異常値検知（ピアプレッシャー）
+  useEffect(() => {
+    if (!isOpen || !member?.userId) return;
+    
+    const loadHistory = async () => {
+      setLoading(true);
+      try {
+        const reports = await getUserRecentReports(member.userId, 7);
+        setRecentReports(reports);
+        
+        // 異常値検知
+        const flags = detectAnomalies(
+          reports, 
+          member.energy || 0,
+          member.guardianData?.stage || 0
+        );
+        setAnomalies(flags);
+      } catch (error) {
+        console.error("履歴取得エラー:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadHistory();
+  }, [isOpen, member?.userId, member?.energy, member?.guardianData?.stage]);
+
   // ESCキーで閉じる
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -36,6 +68,8 @@ export function MemberDetailModal({
   }, [isOpen, onClose]);
 
   if (!isOpen || !member) return null;
+
+  const hasAnomalies = anomalies && Object.values(anomalies).some(v => v);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -195,6 +229,81 @@ export function MemberDetailModal({
             />
           )}
         </div>
+
+        {/* 👁️ ピアプレッシャー：異常値警告 */}
+        {hasAnomalies && (
+          <div className="mt-6 p-4 rounded-xl bg-orange-500/10 border border-orange-500/30">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-5 h-5 text-orange-400" />
+              <span className="text-sm font-bold text-orange-400">疑わしい活動パターン</span>
+            </div>
+            <div className="space-y-2 text-xs text-slate-300">
+              {anomalies?.highEnergyLowOutput && (
+                <div className="flex items-start gap-2">
+                  <span>⚠️</span>
+                  <span>高エナジーだが成果が低い</span>
+                </div>
+              )}
+              {anomalies?.frequentModification && (
+                <div className="flex items-start gap-2">
+                  <span>📝</span>
+                  <span>報告の修正回数が異常に多い</span>
+                </div>
+              )}
+              {anomalies?.inconsistentGrowth && (
+                <div className="flex items-start gap-2">
+                  <span>📈</span>
+                  <span>急激な成長（不自然な変化）</span>
+                </div>
+              )}
+              {anomalies?.suspiciousPattern && (
+                <div className="flex items-start gap-2">
+                  <span>🔍</span>
+                  <span>怪しい数値パターン</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 👁️ 過去7日間の戦歴 */}
+        {recentReports.length > 0 && (
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-bold text-slate-300">過去7日間の戦歴</span>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {recentReports.map((report, index) => (
+                <div 
+                  key={index}
+                  className="p-3 rounded-lg bg-white/5 text-xs"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-slate-400">{report.date}</span>
+                    {(report as any).modifyCount > 0 && (
+                      <span className="text-orange-400">
+                        修正{(report as any).modifyCount}回
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>
+                      {isShorts 
+                        ? `再生 ${(report.igViews || 0).toLocaleString()}` 
+                        : `投稿 ${(report.postCount || 0)}`}
+                    </span>
+                    <span>
+                      {isShorts
+                        ? `投稿 ${((report.igPosts || 0) + (report.ytPosts || 0) + (report.tiktokPosts || 0))}`
+                        : `活動 ${((report.likeCount || 0) + (report.replyCount || 0))}`}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 閉じるボタン */}
         <button

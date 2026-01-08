@@ -907,6 +907,105 @@ export async function hasAnyGuardian(userId: string): Promise<boolean> {
 }
 
 // =====================================
+// 👁️ ピアプレッシャーシステム（Phase 2）
+// =====================================
+
+/**
+ * ユーザーの過去7日間のレポート履歴を取得
+ */
+export async function getUserRecentReports(userId: string, days: number = 7): Promise<Report[]> {
+  try {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const startDateStr = startDate.toISOString().split("T")[0];
+    
+    const q = query(
+      collection(db, "reports"),
+      where("userId", "==", userId),
+      where("date", ">=", startDateStr),
+      orderBy("date", "desc")
+    );
+    
+    const snapshot = await getDocs(q);
+    const reports: Report[] = [];
+    snapshot.forEach((doc) => {
+      reports.push({ id: doc.id, ...doc.data() } as Report);
+    });
+    
+    return reports;
+  } catch (error) {
+    console.error("Error fetching recent reports:", error);
+    return [];
+  }
+}
+
+/**
+ * 異常値検知（ピアプレッシャー用）
+ */
+export interface AnomalyFlags {
+  highEnergyLowOutput: boolean;      // エナジー高いが成果低い
+  frequentModification: boolean;     // 修正頻度が異常
+  inconsistentGrowth: boolean;       // 成長が不自然
+  suspiciousPattern: boolean;        // 怪しいパターン
+}
+
+export function detectAnomalies(
+  reports: Report[],
+  energy: number,
+  guardianStage: number
+): AnomalyFlags {
+  const flags: AnomalyFlags = {
+    highEnergyLowOutput: false,
+    frequentModification: false,
+    inconsistentGrowth: false,
+    suspiciousPattern: false,
+  };
+  
+  if (reports.length === 0) return flags;
+  
+  // 1. エナジーと成果の比率チェック
+  const avgViews = reports.reduce((sum, r) => sum + (r.igViews || 0), 0) / reports.length;
+  const avgPosts = reports.reduce((sum, r) => sum + ((r.igPosts || 0) + (r.ytPosts || 0) + (r.tiktokPosts || 0) + (r.postCount || 0)), 0) / reports.length;
+  
+  // Stage 3以上で高エナジーなのに成果が低い
+  if (guardianStage >= 3 && energy > 300 && avgViews < 1000 && avgPosts < 2) {
+    flags.highEnergyLowOutput = true;
+  }
+  
+  // 2. 修正頻度チェック
+  const modifyCount = reports.reduce((sum, r) => sum + ((r as any).modifyCount || 0), 0);
+  if (modifyCount > reports.length * 2) {
+    flags.frequentModification = true;
+  }
+  
+  // 3. 成長パターンチェック（急激な変化）
+  if (reports.length >= 3) {
+    const recent = reports.slice(0, 3);
+    const older = reports.slice(3, 6);
+    
+    if (older.length > 0) {
+      const recentAvg = recent.reduce((sum, r) => sum + (r.igViews || r.postCount || 0), 0) / recent.length;
+      const olderAvg = older.reduce((sum, r) => sum + (r.igViews || r.postCount || 0), 0) / older.length;
+      
+      // 3倍以上の急激な増加
+      if (recentAvg > olderAvg * 3 && olderAvg > 0) {
+        flags.inconsistentGrowth = true;
+      }
+    }
+  }
+  
+  // 4. 怪しいパターン（すべての数値が同じ等）
+  const allSame = reports.every(r => 
+    (r.igViews || 0) === (reports[0].igViews || 0)
+  );
+  if (allSame && reports.length >= 3) {
+    flags.suspiciousPattern = true;
+  }
+  
+  return flags;
+}
+
+// =====================================
 // 🔒 デイリーロックシステム（Phase 1）
 // =====================================
 
