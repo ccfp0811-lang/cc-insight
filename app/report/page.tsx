@@ -74,6 +74,7 @@ export default function ReportPage() {
   const [xPostUrls, setXPostUrls] = useState<string[]>([""]);
   const [xLikeCount, setXLikeCount] = useState("");
   const [xReplyCount, setXReplyCount] = useState("");
+  const [xFollowers, setXFollowers] = useState(""); // 🆕 Xフォロワー数追加
   const [xTodayComment, setXTodayComment] = useState("");
 
   const selectedTeamData = teams.find(t => t.id === selectedTeam);
@@ -97,6 +98,7 @@ export default function ReportPage() {
           setXPostUrls(existing.postUrls || [""]);
           setXLikeCount(String(existing.likeCount || ""));
           setXReplyCount(String(existing.replyCount || ""));
+          setXFollowers(String((existing as any).xFollowers || "")); // 🆕 Xフォロワー数復元
           setXTodayComment(existing.todayComment || "");
         } else {
           setAccountId(existing.accountId || "");
@@ -185,6 +187,7 @@ export default function ReportPage() {
         postUrls: xPostUrls.filter(url => url.trim() !== ""),
         likeCount: parseInt(xLikeCount) || 0,
         replyCount: parseInt(xReplyCount) || 0,
+        xFollowers: parseInt(xFollowers) || 0, // 🆕 Xフォロワー数を送信
         todayComment: xTodayComment || "",
       } : {
         accountId: accountId || "",
@@ -568,6 +571,22 @@ export default function ReportPage() {
                         </div>
                       </div>
 
+                      {/* 🆕 Xフォロワー数 */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-yellow-500" />
+                          現在のXフォロワー数
+                        </Label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={xFollowers}
+                          onChange={(e) => setXFollowers(e.target.value)}
+                          className="bg-white/5 border-yellow-500/30 focus:border-yellow-500"
+                          min="0"
+                        />
+                      </div>
+
                       {/* 投稿URL */}
                       <div className="space-y-3">
                         <Label className="flex items-center gap-2">
@@ -709,7 +728,7 @@ export default function ReportPage() {
                         <div className="space-y-2">
                           <Label className="flex items-center gap-2 text-sm">
                             <FileText className="w-4 h-4" style={{ color: teamColor }} />
-                            週のストーリー数
+                            今日のストーリー投稿数
                           </Label>
                           <Input
                             type="number"
