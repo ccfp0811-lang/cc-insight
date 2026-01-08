@@ -10,12 +10,14 @@ import { getReportsByPeriod, calculateTeamStats, teams } from "@/lib/firestore";
 const team = teams.find((t) => t.id === "taishoku")!;
 
 const periodOptions = [
+  { id: "today", label: "今日" },
   { id: "week", label: "今週" },
   { id: "month", label: "今月" },
   { id: "1q", label: "1Q" },
   { id: "2q", label: "2Q" },
   { id: "3q", label: "3Q" },
   { id: "4q", label: "4Q" },
+  { id: "custom", label: "期間指定" },
 ];
 
 export default function ResignationTeamPage() {
@@ -23,13 +25,37 @@ export default function ResignationTeamPage() {
   const [teamStats, setTeamStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const reports = await getReportsByPeriod(period, "taishoku");
+        let reports;
+
+        if (period === "custom" && customStartDate && customEndDate) {
+          const { collection: dbCollection, query, where, orderBy, getDocs } = await import("firebase/firestore");
+          const { db } = await import("@/lib/firebase");
+
+          const q = query(
+            dbCollection(db, "reports"),
+            where("date", ">=", customStartDate),
+            where("date", "<=", customEndDate),
+            where("team", "==", "taishoku"),
+            orderBy("date", "desc")
+          );
+
+          const snapshot = await getDocs(q);
+          reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+        } else if (period === "custom") {
+          reports = await getReportsByPeriod("week", "taishoku");
+        } else {
+          reports = await getReportsByPeriod(period, "taishoku");
+        }
+
         const stats = calculateTeamStats(reports, "taishoku");
         setTeamStats(stats);
       } catch (error: any) {
@@ -47,7 +73,23 @@ export default function ResignationTeamPage() {
     };
 
     loadData();
-  }, [period]);
+  }, [period, customStartDate, customEndDate]);
+
+  const handlePeriodChange = (newPeriod: string) => {
+    setPeriod(newPeriod);
+    if (newPeriod === "custom") {
+      setShowCustomDatePicker(true);
+    } else {
+      setShowCustomDatePicker(false);
+    }
+  };
+
+  const applyCustomPeriod = () => {
+    if (customStartDate && customEndDate) {
+      setPeriod("custom");
+      setShowCustomDatePicker(false);
+    }
+  };
 
   if (loading || !teamStats) {
     return (
@@ -89,11 +131,11 @@ export default function ResignationTeamPage() {
               key={option.id}
               variant={period === option.id ? "default" : "outline"}
               size="sm"
-              onClick={() => setPeriod(option.id)}
+              onClick={() => handlePeriodChange(option.id)}
               className={
                 period === option.id
                   ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0 shadow-[0_0_20px_rgba(6,182,212,0.5)]"
-                  : "border-white/20 hover:bg-white/10"
+                  : "!text-[oklch(0.145_0_0)] dark:!text-[oklch(0.985_0_0)]"
               }
             >
               {option.label}
@@ -101,6 +143,61 @@ export default function ResignationTeamPage() {
           ))}
         </div>
       </div>
+
+      {/* Custom Date Picker */}
+      {showCustomDatePicker && (
+        <GlassCard glowColor={team.color} className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-5 h-5" style={{ color: team.color }} />
+              <h3 className="text-lg font-semibold">カスタム期間を指定</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div>
+                <label className="block text-sm font-medium mb-2">開始日</label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">終了日</label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={applyCustomPeriod}
+                  disabled={!customStartDate || !customEndDate}
+                  className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white"
+                >
+                  適用
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowCustomDatePicker(false);
+                    setPeriod("week");
+                  }}
+                >
+                  キャンセル
+                </Button>
+              </div>
+            </div>
+            {period === "custom" && customStartDate && customEndDate && (
+              <p className="text-sm text-muted-foreground mt-2">
+                📅 表示期間: {customStartDate} 〜 {customEndDate}
+              </p>
+            )}
+          </div>
+        </GlassCard>
+      )}
 
       {/* Today's Progress */}
       <TodayProgress
