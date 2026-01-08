@@ -15,7 +15,8 @@ import {
   Users,
   Settings,
   Shield,
-  Search
+  Search,
+  MessageCircle
 } from "lucide-react";
 import { getUserGuardianProfile } from "@/lib/firestore";
 import { GUARDIANS, ATTRIBUTES, EVOLUTION_STAGES, getGuardianImagePath, GuardianId } from "@/lib/guardian-collection";
@@ -59,6 +60,12 @@ const adminNavItems = [
     subtitle: "異常値・言行一致",
     href: "/admin/audit",
     icon: Search,
+  },
+  {
+    title: "メンバーメッセージ",
+    subtitle: "今日の一言",
+    href: "/admin/messages",
+    icon: MessageCircle,
   },
   {
     title: "副業チーム",
