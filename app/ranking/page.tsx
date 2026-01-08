@@ -128,19 +128,21 @@ export default function AllTeamsRankingPage() {
       <div className="flex justify-center">
         <Tabs value={period} onValueChange={(v) => setPeriod(v as "week" | "month")} className="w-full max-w-md">
           <TabsList className="grid w-full grid-cols-2 glass-bg border border-white/10">
-            <TabsTrigger 
+            <TabsTrigger
               value="week"
               className="bg-white/10 text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
             >
-              <Calendar className="w-4 h-4 mr-2" />
-              週間ランキング
+              <Calendar className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">週間ランキング</span>
+              <span className="sm:hidden">週間</span>
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="month"
               className="bg-white/10 text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-600 data-[state=active]:text-white"
             >
-              <Calendar className="w-4 h-4 mr-2" />
-              月間ランキング
+              <Calendar className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">月間ランキング</span>
+              <span className="sm:hidden">月間</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -634,7 +636,7 @@ export default function AllTeamsRankingPage() {
         onClose={() => setSelectedMember(null)}
         teamColor={selectedTeam?.color || '#EC4899'}
         teamName={selectedTeam?.name || ''}
-        isShorts={selectedTeam?.isShorts || true}
+        isShorts={selectedTeam?.type === 'shorts'}
       />
     </div>
   );
