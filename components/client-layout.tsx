@@ -112,7 +112,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* メインコンテンツ */}
-        <main className="flex-1 md:ml-64 pb-60 md:pb-8 p-4 md:p-8 pt-[env(safe-area-inset-top,1rem)] w-full relative z-10">
+        <main className="flex-1 md:ml-64 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-8 p-4 md:p-8 pt-[env(safe-area-inset-top,1rem)] w-full relative z-10">
           <LogoutButton />
           {children}
         </main>
@@ -181,7 +181,7 @@ function BottomNavigation() {
   const navItems = userProfile?.role === "admin" ? adminNavItems : memberNavItems;
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-premium border-t border-white/10 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-premium border-t border-white/10 pb-[env(safe-area-inset-bottom,0.5rem)] shadow-[0_-4px_24px_rgba(0,0,0,0.3)]">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href);
