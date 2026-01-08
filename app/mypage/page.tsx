@@ -399,19 +399,19 @@ export default function MyPage() {
       </GlassCard>
 
       {/* エナジー＆ストリーク（ジュエル化 + カウントアップ） */}
-      <div className="grid gap-6 grid-cols-3">
+      <div className="grid gap-4 grid-cols-3">
         {/* 保有エナジー */}
         <motion.div
           initial={{ scale: 0, rotateY: -180 }}
           animate={{ scale: 1, rotateY: 0 }}
           transition={{ duration: 0.6, delay: 0 }}
-          className="jewel-card glass-premium p-6 rounded-2xl border border-white/20"
+          className="jewel-card glass-premium p-4 rounded-2xl border border-white/20"
         >
           <div className="text-center relative">
             {/* ネオンアイコン */}
-            <div className="neon-icon-wrapper mx-auto mb-4">
+            <div className="neon-icon-wrapper mx-auto mb-2">
               <Zap 
-                className="w-14 h-14 text-yellow-400 relative z-10" 
+                className="w-10 h-10 text-yellow-400 relative z-10" 
                 style={{
                   filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.8))'
                 }}
@@ -420,9 +420,9 @@ export default function MyPage() {
             </div>
             
             {/* ラベル */}
-            <p className="stat-label text-sm mb-1 text-gray-300">保有エナジー</p>
+            <p className="stat-label text-xs mb-1 text-gray-300 whitespace-nowrap">保有<br className="sm:hidden"/>エナジー</p>
             {/* 世界観テキスト */}
-            <p className="text-[10px] text-gray-500 mb-2">守護神の進化に捧げる聖なる力</p>
+            <p className="text-[9px] text-gray-500 mb-2 leading-tight">進化の力</p>
             
             {/* カウントアップ数値 */}
             <motion.p 
@@ -444,13 +444,13 @@ export default function MyPage() {
           initial={{ scale: 0, rotateY: -180 }}
           animate={{ scale: 1, rotateY: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="jewel-card glass-premium p-6 rounded-2xl border border-white/20"
+          className="jewel-card glass-premium p-4 rounded-2xl border border-white/20"
         >
           <div className="text-center relative">
             {/* ネオンアイコン */}
-            <div className="neon-icon-wrapper mx-auto mb-4">
+            <div className="neon-icon-wrapper mx-auto mb-2">
               <TrendingUp 
-                className="w-14 h-14 text-purple-400 relative z-10" 
+                className="w-10 h-10 text-purple-400 relative z-10" 
                 style={{
                   filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.8))'
                 }}
@@ -459,9 +459,9 @@ export default function MyPage() {
             </div>
             
             {/* ラベル */}
-            <p className="stat-label text-sm mb-1 text-gray-300">累計獲得</p>
+            <p className="stat-label text-xs mb-1 text-gray-300 whitespace-nowrap">累計<br className="sm:hidden"/>獲得</p>
             {/* 世界観テキスト */}
-            <p className="text-[10px] text-gray-500 mb-2">これまでの貢献と冒険の証</p>
+            <p className="text-[9px] text-gray-500 mb-2 leading-tight">冒険の証</p>
             
             {/* カウントアップ数値 */}
             <motion.p 
@@ -483,13 +483,13 @@ export default function MyPage() {
           initial={{ scale: 0, rotateY: -180 }}
           animate={{ scale: 1, rotateY: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="jewel-card glass-premium p-6 rounded-2xl border border-white/20"
+          className="jewel-card glass-premium p-4 rounded-2xl border border-white/20"
         >
           <div className="text-center relative">
             {/* ネオンアイコン */}
-            <div className="neon-icon-wrapper mx-auto mb-4">
+            <div className="neon-icon-wrapper mx-auto mb-2">
               <Flame 
-                className="w-14 h-14 text-orange-400 relative z-10" 
+                className="w-10 h-10 text-orange-400 relative z-10" 
                 style={{
                   filter: 'drop-shadow(0 0 15px rgba(251, 146, 60, 0.8))'
                 }}
@@ -498,9 +498,9 @@ export default function MyPage() {
             </div>
             
             {/* ラベル */}
-            <p className="stat-label text-sm mb-1 text-gray-300">ストリーク</p>
+            <p className="stat-label text-xs mb-1 text-gray-300 whitespace-nowrap">ストリーク</p>
             {/* 世界観テキスト */}
-            <p className="text-[10px] text-gray-500 mb-2">連続報告による守護神との絆</p>
+            <p className="text-[9px] text-gray-500 mb-2 leading-tight">連続の絆</p>
             
             {/* カウントアップ数値 */}
             <motion.div
@@ -622,36 +622,36 @@ export default function MyPage() {
       {/* クイックアクション */}
       <div className="grid gap-4 grid-cols-3">
         <Link href="/report">
-          <GlassCard glowColor="#22C55E" className="p-6 cursor-pointer hover:scale-[1.02] transition-transform">
+          <GlassCard glowColor="#22C55E" className="p-4 cursor-pointer hover:scale-[1.02] transition-transform">
             <div className="text-center">
-              <div className="text-5xl mb-3">📝</div>
-              <h3 className="text-lg font-bold mb-2">今日の報告</h3>
-              <p className="text-sm text-muted-foreground">
-                報告してエナジーを獲得
+              <div className="text-4xl mb-2">📝</div>
+              <h3 className="text-sm font-bold mb-1 whitespace-nowrap">今日の<br className="sm:hidden"/>報告</h3>
+              <p className="text-xs text-muted-foreground leading-tight">
+                エナジー獲得
               </p>
             </div>
           </GlassCard>
         </Link>
 
         <Link href="/guardians">
-          <GlassCard glowColor="#8B5CF6" className="p-6 cursor-pointer hover:scale-[1.02] transition-transform">
+          <GlassCard glowColor="#8B5CF6" className="p-4 cursor-pointer hover:scale-[1.02] transition-transform">
             <div className="text-center">
-              <div className="text-5xl mb-3">🛡️</div>
-              <h3 className="text-lg font-bold mb-2">守護神</h3>
-              <p className="text-sm text-muted-foreground">
-                守護神を育てて進化させよう
+              <div className="text-4xl mb-2">🛡️</div>
+              <h3 className="text-sm font-bold mb-1 whitespace-nowrap">守護神</h3>
+              <p className="text-xs text-muted-foreground leading-tight">
+                進化させよう
               </p>
             </div>
           </GlassCard>
         </Link>
 
         <Link href="/ranking">
-          <GlassCard glowColor="#EAB308" className="p-6 cursor-pointer hover:scale-[1.02] transition-transform">
+          <GlassCard glowColor="#EAB308" className="p-4 cursor-pointer hover:scale-[1.02] transition-transform">
             <div className="text-center">
-              <div className="text-5xl mb-3">🏆</div>
-              <h3 className="text-lg font-bold mb-2">ランキング</h3>
-              <p className="text-sm text-muted-foreground">
-                他のメンバーと競い合おう
+              <div className="text-4xl mb-2">🏆</div>
+              <h3 className="text-sm font-bold mb-1 whitespace-nowrap">ランキング</h3>
+              <p className="text-xs text-muted-foreground leading-tight">
+                競い合おう
               </p>
             </div>
           </GlassCard>

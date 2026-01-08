@@ -132,8 +132,14 @@ export default function GuardiansPage() {
   }
 
   const allGuardians = Object.values(GUARDIANS);
-  const unlockedCount = Object.values(profile.guardians).filter(g => g?.unlocked).length;
-  const totalCount = allGuardians.length;
+  
+  // 進捗計算：各守護神のstage（0-4）を含めて計算
+  // 6体 × 5段階 = 30コレクション
+  const unlockedStagesCount = Object.values(profile.guardians)
+    .filter(g => g?.unlocked)
+    .reduce((sum, g) => sum + (g.stage + 1), 0); // stage 0 = 1段階、stage 4 = 5段階
+  const totalStages = allGuardians.length * 5; // 6体 × 5段階 = 30
+  const completionPercentage = Math.round((unlockedStagesCount / totalStages) * 100);
 
   return (
     <div className="space-y-8 pb-12">
@@ -144,8 +150,8 @@ export default function GuardiansPage() {
             🛡️ 守護神図鑑
           </h1>
           <p className="text-slate-300">
-            コレクション進捗: <span className="text-2xl font-bold text-purple-400">{unlockedCount}</span>
-            <span className="text-slate-400"> / {totalCount}</span>
+            コレクション進捗: <span className="text-2xl font-bold text-purple-400">{unlockedStagesCount}</span>
+            <span className="text-slate-400"> / {totalStages}</span>
           </p>
         </div>
         <div className="text-right">
@@ -162,13 +168,13 @@ export default function GuardiansPage() {
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-slate-300">図鑑完成度</span>
           <span className="text-sm font-bold text-purple-400">
-            {Math.round((unlockedCount / totalCount) * 100)}%
+            {completionPercentage}%
           </span>
         </div>
         <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
           <div 
             className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 transition-all duration-1000"
-            style={{ width: `${(unlockedCount / totalCount) * 100}%` }}
+            style={{ width: `${completionPercentage}%` }}
           />
         </div>
       </div>
