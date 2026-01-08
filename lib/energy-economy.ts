@@ -386,8 +386,20 @@ export function calculateTotalEnergy(
   const streakMultiplier = calculateStreakMultiplier(streakDays);
   const curseMultiplier = curseState.multiplier;
   
-  // 最終計算
-  const total = Math.floor(subtotal * streakMultiplier * curseMultiplier * gachaMultiplier);
+  // 🔧 浮動小数点誤差対策: 整数演算に変換して計算
+  // 1000倍して整数化 → 計算 → 1000で割ってMath.floor
+  const PRECISION = 1000;
+  const subtotalInt = Math.round(subtotal * PRECISION);
+  const streakInt = Math.round(streakMultiplier * PRECISION);
+  const curseInt = Math.round(curseMultiplier * PRECISION);
+  const gachaInt = Math.round(gachaMultiplier * PRECISION);
+
+  // 整数演算で計算（精度を保つ）
+  const totalInt = Math.floor(
+    (subtotalInt * streakInt * curseInt * gachaInt) / (PRECISION * PRECISION * PRECISION)
+  );
+
+  const total = totalInt;
   
   // 内訳テキスト生成
   const breakdown = `
