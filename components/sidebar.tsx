@@ -16,7 +16,8 @@ import {
   Settings,
   Shield,
   Search,
-  MessageCircle
+  MessageCircle,
+  MessageSquare
 } from "lucide-react";
 import { getUserGuardianProfile } from "@/lib/firestore";
 import { GUARDIANS, ATTRIBUTES, EVOLUTION_STAGES, getGuardianImagePath, GuardianId } from "@/lib/guardian-collection";
@@ -28,6 +29,12 @@ const memberNavItems = [
     subtitle: "あなたの冒険",
     href: "/mypage",
     icon: User,
+  },
+  {
+    title: "運営とのDM",
+    subtitle: "質問・相談",
+    href: "/dm",
+    icon: MessageSquare,
   },
   {
     title: "ランキング",
@@ -66,6 +73,12 @@ const adminNavItems = [
     subtitle: "今日の一言",
     href: "/admin/messages",
     icon: MessageCircle,
+  },
+  {
+    title: "DMチャット",
+    subtitle: "双方向メッセージ",
+    href: "/admin/dm",
+    icon: MessageSquare,
   },
   {
     title: "副業チーム",
