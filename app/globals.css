@@ -706,3 +706,920 @@
   animation: float-gentle 2s ease-in-out infinite;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
 }
+
+/* =====================================
+   📱 レスポンシブ対応（モバイルファースト）
+   ===================================== */
+
+/* モバイル最適化 */
+@media (max-width: 640px) {
+  /* 最小タップターゲット: 44x44px（Appleガイドライン準拠） */
+  button,
+  a,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+  }
+
+  /* 文字サイズ調整（可読性向上） */
+  .text-xs {
+    font-size: 0.7rem;
+    line-height: 1.4;
+  }
+  .text-sm {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+  .text-base {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .text-lg {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .text-xl {
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+  .text-2xl {
+    font-size: 1.3rem;
+    line-height: 1.7;
+  }
+  .text-3xl {
+    font-size: 1.5rem;
+    line-height: 1.8;
+  }
+
+  /* カード間隔調整 */
+  .space-y-8 > * + * {
+    margin-top: 1.5rem !important;
+  }
+  .space-y-6 > * + * {
+    margin-top: 1rem !important;
+  }
+  .space-y-4 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  /* パディング調整 */
+  .p-8 {
+    padding: 1.5rem;
+  }
+  .p-6 {
+    padding: 1.25rem;
+  }
+  .p-4 {
+    padding: 1rem;
+  }
+
+  /* グリッド調整（1列表示） */
+  .grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+  .grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  /* マージン調整 */
+  .gap-8 {
+    gap: 1.5rem;
+  }
+  .gap-6 {
+    gap: 1rem;
+  }
+  .gap-4 {
+    gap: 0.75rem;
+  }
+
+  /* 守護神アバター（モバイル） */
+  .guardian-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* ジュエルカード（モバイル） */
+  .jewel-card {
+    padding: 1rem !important;
+  }
+
+  /* 統計数値（モバイル） */
+  .stat-value {
+    font-size: 2rem !important;
+  }
+
+  /* グラスカード（モバイル） */
+  .glass-premium {
+    padding: 1.25rem;
+  }
+}
+
+/* タッチデバイス用ホバー無効化 */
+@media (hover: none) and (pointer: coarse) {
+  /* ホバーエフェクトを無効化（タッチデバイス） */
+  .hover\:scale-105:hover {
+    transform: scale(1);
+  }
+  .hover\:bg-white\/10:hover {
+    background-color: transparent;
+  }
+  .hover\:opacity-90:hover {
+    opacity: 1;
+  }
+  .hover\:shadow-lg:hover {
+    box-shadow: none;
+  }
+
+  /* タップ時のアクティブ状態を追加 */
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+    transition: transform 0.1s ease, opacity 0.1s ease;
+  }
+}
+
+/* タブレット（横向き） */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* 守護神アバター（タブレット） */
+  .guardian-avatar {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* 大画面（デスクトップ） */
+@media (min-width: 1025px) {
+  /* パフォーマンス最適化：アニメーションの有効化 */
+  .guardian-floating,
+  .nebula-bg,
+  .floating-card {
+    will-change: transform;
+  }
+}
+
+/* 縦長画面対応（スマートフォン） */
+@media (max-height: 700px) and (max-width: 640px) {
+  /* ヘッダーを小さく */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* カード間隔をさらに縮小 */
+  .space-y-8 > * + * {
+    margin-top: 1rem !important;
+  }
+  .space-y-6 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  /* パディング最小化 */
+  .p-8 {
+    padding: 1rem;
+  }
+  .p-6 {
+    padding: 0.875rem;
+  }
+}
+
+/* アクセシビリティ：フォーカス可視化 */
+@media (prefers-reduced-motion: no-preference) {
+  /* アニメーション許可時のみ */
+  *:focus-visible {
+    outline: 2px solid rgba(168, 85, 247, 0.8);
+    outline-offset: 2px;
+    transition: outline-offset 0.2s ease;
+  }
+}
+
+/* 低速モード対応（アニメーション削減） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ダークモード強制（既に適用済みだが念のため） */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #020617 !important;
+    color: #f1f5f9 !important;
+  }
+}
+
+/* =====================================
+   🎯 タクタイル・フィードバック（P2）
+   触っているだけで気持ちいいUI
+   ===================================== */
+
+/* ボタンの完璧な沈み込み＋光の走行 */
+button,
+[role="button"],
+.tactile-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+button:active,
+[role="button"]:active,
+.tactile-button:active {
+  transform: scale(0.98) translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 光の走行エフェクト（ホバー時） */
+button::before,
+[role="button"]::before,
+.tactile-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+
+button:hover::before,
+[role="button"]:hover::before,
+.tactile-button:hover::before {
+  left: 100%;
+}
+
+/* カードのマイクロリフト */
+.card-lift,
+.glass-premium,
+.jewel-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-lift:hover,
+.glass-premium:hover,
+.jewel-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3),
+              0 0 30px rgba(168, 85, 247, 0.2);
+}
+
+/* インプットフィールドのフォーカスリング */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3),
+              0 0 20px rgba(168, 85, 247, 0.2);
+  transform: scale(1.01);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* チェックボックス・ラジオのスムーズ切り替え */
+input[type="checkbox"],
+input[type="radio"] {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
+/* リンクのアンダーラインアニメーション */
+a {
+  position: relative;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+a:hover::after {
+  width: 100%;
+}
+
+/* スクロールバーのカスタマイズ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border-radius: 5px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #c084fc, #f472b6);
+}
+
+/* プログレスバーのアニメーション */
+progress {
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+progress::-webkit-progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #a855f7, #ec4899, #22d3ee);
+  background-size: 200% 100%;
+  animation: progress-flow 2s ease infinite;
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes progress-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* セレクトボックスのドロップダウンアニメーション */
+select {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+select:focus {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+/* トグルスイッチのスムーズ切り替え */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 13px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* モーダルの出現アニメーション */
+.modal-backdrop {
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ドロップダウンメニューの展開アニメーション */
+.dropdown-menu {
+  animation: dropdownExpand 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: top;
+}
+
+@keyframes dropdownExpand {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+/* ツールチップの滑らかな出現 */
+.tooltip {
+  animation: tooltipFadeIn 0.2s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* リストアイテムのスタガーアニメーション */
+.stagger-item {
+  animation: staggerFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 0.05s; }
+.stagger-item:nth-child(2) { animation-delay: 0.1s; }
+.stagger-item:nth-child(3) { animation-delay: 0.15s; }
+.stagger-item:nth-child(4) { animation-delay: 0.2s; }
+.stagger-item:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* バッジのポップアニメーション */
+.badge-pop {
+  animation: badgePop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes badgePop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ローディングスピナーの滑らかな回転 */
+.spinner {
+  animation: spin 1s linear infinite;
+  will-change: transform;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* テキストのタイプライターエフェクト */
+.typewriter {
+  overflow: hidden;
+  border-right: 2px solid rgba(168, 85, 247, 0.75);
+  white-space: nowrap;
+  animation: typing 3s steps(40) 1s both,
+             blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink-caret {
+  from, to {
+    border-color: transparent;
+  }
+  50% {
+    border-color: rgba(168, 85, 247, 0.75);
+  }
+}
+
+/* スケルトンローディング */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* =====================================
+   🎨 リッチアセット自動エフェクト
+   ミッドジャーニー画像受入準備
+   ===================================== */
+
+/* エナジーオーブ系アイコン */
+.icon-energy-orb {
+  filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8))
+          drop-shadow(0 0 40px rgba(236, 72, 153, 0.6));
+  animation: float-gentle 3s ease-in-out infinite;
+}
+
+/* 保有エナジーアイコン */
+.icon-total-energy {
+  filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.9))
+          drop-shadow(0 0 30px rgba(168, 85, 247, 0.5));
+}
+
+/* 累計エナジーアイコン */
+.icon-cumulative-energy {
+  filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.8))
+          drop-shadow(0 0 25px rgba(34, 211, 238, 0.4));
+}
+
+/* ストリーク炎アイコン */
+.icon-streak-flame {
+  filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.9))
+          drop-shadow(0 0 35px rgba(251, 191, 36, 0.6));
+  animation: flicker-flame 2s ease-in-out infinite;
+}
+
+@keyframes flicker-flame {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.9))
+            drop-shadow(0 0 35px rgba(251, 191, 36, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 25px rgba(251, 191, 36, 1))
+            drop-shadow(0 0 45px rgba(251, 191, 36, 0.8));
+  }
+}
+
+/* ストリーク炎バリエーション */
+.icon-streak-flame-spark {
+  filter: drop-shadow(0 0 18px rgba(249, 115, 22, 0.9))
+          drop-shadow(0 0 30px rgba(249, 115, 22, 0.6));
+}
+
+.icon-streak-flame-blue {
+  filter: drop-shadow(0 0 22px rgba(34, 211, 238, 0.9))
+          drop-shadow(0 0 40px rgba(34, 211, 238, 0.7));
+}
+
+.icon-streak-flame-inferno {
+  filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1))
+          drop-shadow(0 0 45px rgba(236, 72, 153, 0.8))
+          drop-shadow(0 0 60px rgba(168, 85, 247, 0.6));
+  animation: rainbow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes rainbow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1))
+            drop-shadow(0 0 45px rgba(236, 72, 153, 0.8));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(236, 72, 153, 1))
+            drop-shadow(0 0 50px rgba(168, 85, 247, 0.9));
+  }
+}
+
+/* ランキングメダル */
+.icon-medal-gold {
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9))
+          drop-shadow(0 0 35px rgba(255, 215, 0, 0.6));
+}
+
+.icon-medal-silver {
+  filter: drop-shadow(0 0 18px rgba(192, 192, 192, 0.9))
+          drop-shadow(0 0 30px rgba(192, 192, 192, 0.5));
+}
+
+.icon-medal-bronze {
+  filter: drop-shadow(0 0 18px rgba(205, 127, 50, 0.9))
+          drop-shadow(0 0 30px rgba(205, 127, 50, 0.5));
+}
+
+/* KPIアイコンセット */
+.icon-kpi {
+  filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.7))
+          drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
+  transition: all 0.3s ease;
+}
+
+.icon-kpi:hover {
+  filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.9))
+          drop-shadow(0 0 30px rgba(168, 85, 247, 0.6));
+  transform: scale(1.05);
+}
+
+/* ティアバッジ */
+.icon-tier-normal {
+  filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.8));
+}
+
+.icon-tier-silver {
+  filter: drop-shadow(0 0 18px rgba(148, 163, 184, 0.9));
+}
+
+.icon-tier-gold {
+  filter: drop-shadow(0 0 22px rgba(251, 191, 36, 0.9))
+          drop-shadow(0 0 40px rgba(251, 191, 36, 0.6));
+}
+
+.icon-tier-platinum {
+  filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.9))
+          drop-shadow(0 0 45px rgba(236, 72, 153, 0.7));
+}
+
+.icon-tier-diamond {
+  filter: drop-shadow(0 0 28px rgba(34, 211, 238, 0.9))
+          drop-shadow(0 0 50px rgba(168, 85, 247, 0.8));
+  animation: divine-pulse 4s ease-in-out infinite;
+}
+
+@keyframes divine-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 28px rgba(34, 211, 238, 0.9))
+            drop-shadow(0 0 50px rgba(168, 85, 247, 0.8));
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(34, 211, 238, 1))
+            drop-shadow(0 0 60px rgba(168, 85, 247, 1));
+  }
+}
+
+/* ステータスアイコン（呪い状態） */
+.icon-status-anxiety {
+  filter: drop-shadow(0 0 12px rgba(251, 146, 60, 0.8));
+}
+
+.icon-status-weakness {
+  filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.7));
+}
+
+.icon-status-cursed {
+  filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.9))
+          drop-shadow(0 0 35px rgba(0, 0, 0, 0.8));
+  animation: ominous-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ominous-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.9))
+            drop-shadow(0 0 35px rgba(0, 0, 0, 0.8));
+  }
+  50% {
+    filter: drop-shadow(0 0 25px rgba(220, 38, 38, 1))
+            drop-shadow(0 0 45px rgba(0, 0, 0, 1));
+  }
+}
+
+/* ログインボーナス関連アイコン */
+.icon-calendar {
+  filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.8));
+}
+
+.icon-clock {
+  filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.8));
+}
+
+/* アクションボタン用アイコン */
+.icon-submit-report {
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.8));
+}
+
+.icon-invest-energy {
+  filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.8))
+          drop-shadow(0 0 25px rgba(168, 85, 247, 0.5));
+}
+
+/* 共通アイコンスタイル */
+.ui-icon {
+  display: inline-block;
+  vertical-align: middle;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ui-icon:hover {
+  transform: scale(1.1) translateY(-2px);
+}
+
+/* アイコンサイズバリエーション */
+.ui-icon-xs {
+  width: 16px;
+  height: 16px;
+}
+
+.ui-icon-sm {
+  width: 24px;
+  height: 24px;
+}
+
+.ui-icon-md {
+  width: 32px;
+  height: 32px;
+}
+
+.ui-icon-lg {
+  width: 48px;
+  height: 48px;
+}
+
+.ui-icon-xl {
+  width: 64px;
+  height: 64px;
+}
+
+.ui-icon-2xl {
+  width: 96px;
+  height: 96px;
+}
+
+.ui-icon-3xl {
+  width: 128px;
+  height: 128px;
+}
+
+/* アイコンコンテナ（中央配置） */
+.icon-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* アイコン背景グロー */
+.icon-glow-bg {
+  position: absolute;
+  inset: -20%;
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0.6;
+  z-index: -1;
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+/* アイコンローディング状態 */
+.icon-loading {
+  opacity: 0.5;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* アイコン無効化状態 */
+.icon-disabled {
+  opacity: 0.4;
+  filter: grayscale(100%);
+  cursor: not-allowed;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 640px) {
+  /* モバイルではグローエフェクトを軽減 */
+  .icon-energy-orb,
+  .icon-streak-flame,
+  .icon-tier-diamond {
+    filter: drop-shadow(0 0 10px currentColor)
+            drop-shadow(0 0 20px currentColor);
+  }
+  
+  /* アイコンサイズを自動調整 */
+  .ui-icon-lg {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .ui-icon-xl {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+/* ダークモード最適化 */
+@media (prefers-color-scheme: dark) {
+  /* 既にダークモード前提だが念のため */
+  .ui-icon {
+    filter: brightness(1.1);
+  }
+}
+
+/* アクセシビリティ：アニメーション削減設定 */
+@media (prefers-reduced-motion: reduce) {
+  .icon-energy-orb,
+  .icon-streak-flame,
+  .icon-tier-diamond,
+  .icon-status-cursed,
+  .icon-glow-bg {
+    animation: none !important;
+  }
+}

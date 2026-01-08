@@ -3,6 +3,7 @@ import {
   query, 
   where, 
   orderBy, 
+  limit,
   onSnapshot,
   getDocs,
   getDoc,
@@ -946,6 +947,69 @@ export async function getUserRecentReports(userId: string, days: number = 7): Pr
   } catch (error) {
     console.error("Error fetching recent reports:", error);
     return [];
+  }
+}
+
+// =====================================
+// 🔧 C-1: followerGrowth差分計算修正
+// =====================================
+
+/**
+ * 前回レポートからフォロワー数（ストック値）を取得
+ * 
+ * followerGrowthを「累計」ではなく「前回比の増分」として計算するため、
+ * 前回報告時のストック値を取得する関数。
+ * 
+ * ⚠️ 重要: この関数は「真実の数値」実現の中核
+ * - 10,000フォロワーの人が毎日10,000人増扱いされるバグを修正
+ * - 公平性を完全に担保
+ * 
+ * @param userId ユーザーID
+ * @returns 前回のストック値（初回報告時は全て0）
+ */
+export async function getPreviousFollowerCounts(
+  userId: string
+): Promise<{
+  igFollowers: number;
+  ytFollowers: number;
+  tiktokFollowers: number;
+  xFollowers: number;
+} | null> {
+  try {
+    const reportsRef = collection(db, 'reports');
+    const q = query(
+      reportsRef,
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      // 初回報告: 全て0から始まる
+      return {
+        igFollowers: 0,
+        ytFollowers: 0,
+        tiktokFollowers: 0,
+        xFollowers: 0
+      };
+    }
+    
+    const lastReport = snapshot.docs[0].data() as Report;
+    
+    // 前回のストック値を取得
+    // ⚠️ 現在のスキーマでは*Followersに直接ストック値が入っている可能性があるため、
+    //    将来的に*FollowersStock フィールドに移行する
+    return {
+      igFollowers: lastReport.igFollowers || 0,
+      ytFollowers: lastReport.ytFollowers || 0,
+      tiktokFollowers: lastReport.tiktokFollowers || 0,
+      xFollowers: lastReport.xFollowers || 0
+    };
+  } catch (error) {
+    console.error('前回フォロワー数取得エラー:', error);
+    return null;
   }
 }
 

@@ -32,8 +32,10 @@ import {
   TrendingUp,
   Zap
 } from "lucide-react";
-import { teams, processReportWithEnergy, getTodayReport, updateReport, Report, getAllUsers } from "@/lib/firestore";
+import { teams, processReportWithEnergy, getTodayReport, updateReport, Report, getAllUsers, getUserGuardianProfile, getPreviousFollowerCounts } from "@/lib/firestore";
 import EnergyToast from "@/components/energy-toast";
+import { ReportSuccessCelebration } from "@/components/report-success-celebration";
+import { GUARDIANS, ATTRIBUTES } from "@/lib/guardian-collection";
 
 export default function ReportPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -44,6 +46,8 @@ export default function ReportPage() {
   const [error, setError] = useState("");
   const [earnedXP, setEarnedXP] = useState(0);
   const [showEnergyToast, setShowEnergyToast] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [guardianData, setGuardianData] = useState<any>(null);
   
   // 🔒 デイリーロック用
   const [existingReport, setExistingReport] = useState<Report | null>(null);
@@ -182,12 +186,42 @@ export default function ReportPage() {
         team: selectedTeam
       });
       
+      // 🔧 C-1: 前回のフォロワー数を取得（差分計算のため）
+      const previousFollowers = await getPreviousFollowerCounts(user.uid);
+      
+      if (!previousFollowers && !isEditMode) {
+        setError("前回データの取得に失敗しました。もう一度お試しください。");
+        return;
+      }
+      
+      // フォロワー数の差分計算（現在値 - 前回値）
+      // ⚠️ Math.max(0, ...) でマイナスは0扱い（減少は無視）
+      const currentIgFollowers = parseInt(igFollowers) || 0;
+      const currentYtFollowers = parseInt(ytFollowers) || 0;
+      const currentTiktokFollowers = parseInt(tiktokFollowers) || 0;
+      const currentXFollowers = parseInt(xFollowers) || 0;
+      
+      const igFollowerGrowth = isEditMode ? currentIgFollowers : 
+        Math.max(0, currentIgFollowers - (previousFollowers?.igFollowers || 0));
+      const ytFollowerGrowth = isEditMode ? currentYtFollowers : 
+        Math.max(0, currentYtFollowers - (previousFollowers?.ytFollowers || 0));
+      const tiktokFollowerGrowth = isEditMode ? currentTiktokFollowers : 
+        Math.max(0, currentTiktokFollowers - (previousFollowers?.tiktokFollowers || 0));
+      const xFollowerGrowth = isEditMode ? currentXFollowers : 
+        Math.max(0, currentXFollowers - (previousFollowers?.xFollowers || 0));
+      
+      console.log('📊 フォロワー数差分計算', {
+        現在: { ig: currentIgFollowers, yt: currentYtFollowers, tt: currentTiktokFollowers, x: currentXFollowers },
+        前回: previousFollowers,
+        増分: { ig: igFollowerGrowth, yt: ytFollowerGrowth, tt: tiktokFollowerGrowth, x: xFollowerGrowth }
+      });
+      
       const baseData = isXTeam ? {
         postCount: parseInt(xPostCount) || 0,
         postUrls: xPostUrls.filter(url => url.trim() !== ""),
         likeCount: parseInt(xLikeCount) || 0,
         replyCount: parseInt(xReplyCount) || 0,
-        xFollowers: parseInt(xFollowers) || 0, // 🆕 Xフォロワー数を送信
+        xFollowers: xFollowerGrowth, // ✅ 差分（増分）を保存
         todayComment: xTodayComment || "",
       } : {
         accountId: accountId || "",
@@ -196,9 +230,9 @@ export default function ReportPage() {
         igExternalTaps: parseInt(igExternalTaps) || 0,
         igInteractions: parseInt(igInteractions) || 0,
         weeklyStories: parseInt(weeklyStories) || 0,
-        igFollowers: parseInt(igFollowers) || 0,
-        ytFollowers: parseInt(ytFollowers) || 0,
-        tiktokFollowers: parseInt(tiktokFollowers) || 0,
+        igFollowers: igFollowerGrowth, // ✅ 差分（増分）を保存
+        ytFollowers: ytFollowerGrowth, // ✅ 差分（増分）を保存
+        tiktokFollowers: tiktokFollowerGrowth, // ✅ 差分（増分）を保存
         igPosts: parseInt(igPosts) || 0,
         ytPosts: parseInt(ytPosts) || 0,
         tiktokPosts: parseInt(tiktokPosts) || 0,
@@ -239,6 +273,33 @@ export default function ReportPage() {
           const result = await processReportWithEnergy(user.uid);
           if (result.energyEarned > 0) {
             setEarnedXP(result.energyEarned);
+            
+            // 守護神データ取得
+            try {
+              const profile = await getUserGuardianProfile(user.uid);
+              if (profile && profile.activeGuardianId) {
+                const guardian = GUARDIANS[profile.activeGuardianId];
+                const instance = profile.guardians[profile.activeGuardianId];
+                const attr = ATTRIBUTES[guardian.attribute];
+                
+                if (guardian && instance && attr) {
+                  setGuardianData({
+                    emoji: attr.emoji,
+                    name: guardian.name,
+                    color: attr.color,
+                    stageName: instance.stage === 0 ? "卵" : 
+                              instance.stage === 1 ? "幼体" :
+                              instance.stage === 2 ? "成長体" :
+                              instance.stage === 3 ? "成熟体" : "究極体"
+                  });
+                }
+              }
+            } catch (guardianError) {
+              console.error("守護神データ取得エラー:", guardianError);
+            }
+            
+            // セレブレーション表示
+            setShowCelebration(true);
           }
         } catch (energyError) {
           console.error("エナジー処理エラー:", energyError);
@@ -412,74 +473,27 @@ export default function ReportPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Success Message with XP Display */}
-              {success && (
-                <div className="space-y-4">
-                  {/* 送信完了メッセージ */}
-                  <div 
-                    className="p-6 rounded-2xl border-2 relative overflow-hidden"
-                    style={{
-                      backgroundColor: `${teamColor}10`,
-                      borderColor: teamColor,
-                      boxShadow: `0 0 40px ${teamColor}40`
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
-                    
-                    <div className="relative z-10 text-center">
-                      <div className="text-6xl mb-4 animate-bounce">🎉</div>
-                      <h3 className="text-2xl font-bold mb-2" style={{ color: teamColor }}>
-                        送信完了！
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        レポートが正常に送信されました
-                      </p>
-                    </div>
+              {/* Success Message（シンプル版） */}
+              {success && !showCelebration && (
+                <div 
+                  className="p-6 rounded-2xl border-2 relative overflow-hidden"
+                  style={{
+                    backgroundColor: `${teamColor}10`,
+                    borderColor: teamColor,
+                    boxShadow: `0 0 40px ${teamColor}40`
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
+                  
+                  <div className="relative z-10 text-center">
+                    <div className="text-6xl mb-4 animate-bounce">✅</div>
+                    <h3 className="text-2xl font-bold mb-2" style={{ color: teamColor }}>
+                      {isEditMode ? "更新完了！" : "送信完了！"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      レポートが正常に{isEditMode ? "更新" : "送信"}されました
+                    </p>
                   </div>
-
-                  {/* XP獲得表示 */}
-                  {earnedXP > 0 && (
-                    <div 
-                      className="p-6 rounded-2xl border-2 relative overflow-hidden"
-                      style={{
-                        backgroundColor: "rgba(245, 158, 11, 0.1)",
-                        borderColor: "#F59E0B",
-                        boxShadow: "0 0 40px rgba(245, 158, 11, 0.4)"
-                      }}
-                    >
-                      <div className="absolute inset-0">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent animate-pulse" />
-                      </div>
-
-                      <div className="relative z-10">
-                        <div className="flex items-center justify-center gap-3 mb-4">
-                          <Zap className="w-8 h-8 text-yellow-500 animate-pulse" />
-                          <h3 className="text-2xl font-bold text-yellow-500">
-                            XP獲得！
-                          </h3>
-                          <Zap className="w-8 h-8 text-yellow-500 animate-pulse" />
-                        </div>
-
-                        <div className="text-center mb-4">
-                          <div className="text-5xl font-bold bg-gradient-to-r from-yellow-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent animate-pulse">
-                            +{earnedXP.toLocaleString()} エナジー
-                          </div>
-                        </div>
-
-                        {/* マイページへのリンク */}
-                        <div className="text-center pt-2">
-                          <Button
-                            onClick={() => router.push("/mypage")}
-                            variant="outline"
-                            className="border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
-                          >
-                            <TrendingUp className="w-4 h-4 mr-2" />
-                            マイページで詳細を見る
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
               {error && (
@@ -950,6 +964,18 @@ export default function ReportPage() {
         </Card>
 
       </div>
+      
+      {/* 🎉 セレブレーションモーダル */}
+      <ReportSuccessCelebration
+        isOpen={showCelebration}
+        onClose={() => {
+          setShowCelebration(false);
+          // セレブレーション終了後、マイページへの誘導ボタンを表示（オプション）
+        }}
+        earnedEnergy={earnedXP}
+        guardianData={guardianData}
+        teamColor={teamColor}
+      />
     </div>
   );
 }

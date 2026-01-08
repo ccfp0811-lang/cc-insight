@@ -7,6 +7,9 @@ import { LogOut, Home, ClipboardList, Trophy, LayoutDashboard, Users } from "luc
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { checkDailyLoginBonus, addLoginBonusToProfile, type LoginBonusResult } from "@/lib/daily-login-bonus";
+import { DailyLoginModal } from "@/components/daily-login-modal";
 
 // 完全公開ページ（認証不要・サイドバー非表示・ボトムナビ非表示）
 const publicPages = ["/login", "/register", "/verify-email", "/pending-approval", "/admin/login"];
@@ -31,7 +34,36 @@ function LogoutButton() {
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const isPublicPage = publicPages.some((page) => pathname.startsWith(page));
+  
+  // 🎁 デイリーログインボーナス
+  const [loginBonus, setLoginBonus] = useState<LoginBonusResult | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // ログインボーナスチェック（ページロード時に1回のみ）
+  useEffect(() => {
+    const checkBonus = async () => {
+      if (!user || isPublicPage) return;
+      
+      try {
+        const result = await checkDailyLoginBonus(user.uid);
+        
+        // 初回ログインの場合のみ表示
+        if (result.isFirstLoginToday && result.energyEarned > 0) {
+          setLoginBonus(result);
+          setShowLoginModal(true);
+          
+          // エナジーを守護神プロフィールに追加
+          await addLoginBonusToProfile(user.uid, result.energyEarned);
+        }
+      } catch (error) {
+        console.error("ログインボーナスチェックエラー:", error);
+      }
+    };
+
+    checkBonus();
+  }, [user, isPublicPage]);
 
   // 公開ページは認証なしで表示
   if (isPublicPage) {
@@ -87,6 +119,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
         {/* ボトムナビゲーション（モバイルのみ） */}
         <BottomNavigation />
+
+        {/* 🎁 デイリーログインボーナスモーダル */}
+        {loginBonus && (
+          <DailyLoginModal
+            isOpen={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            bonusData={loginBonus}
+          />
+        )}
       </div>
     </AuthGuard>
   );
