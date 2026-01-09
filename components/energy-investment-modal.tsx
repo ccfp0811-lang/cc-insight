@@ -331,6 +331,7 @@ export default function EnergyInvestmentModal({
   // 進化演出中 - 神秘のカード召喚演出
   if (showEvolutionAnimation && evolutionData) {
     const oldPlaceholder = getPlaceholderStyle(guardianId);
+    const oldStageImage = getGuardianImagePath(guardianId, evolutionData.from as EvolutionStage);
     const newStageImage = getGuardianImagePath(guardianId, evolutionData.to as EvolutionStage);
 
     return (
@@ -476,9 +477,24 @@ export default function EnergyInvestmentModal({
               <div
                 className="absolute inset-0"
                 style={{ background: oldPlaceholder.background }}
-              />
-              {/* 守護神アイコン（旧） */}
-              <div className="absolute inset-0 flex items-center justify-center">
+              >
+                <motion.img
+                  src={oldStageImage}
+                  alt={guardian.name}
+                  className="w-full h-full object-contain"
+                  animate={{
+                    opacity: evolutionPhase === "cardify" ? [1, 0.7] : evolutionPhase === "charging" ? 0.5 : 1
+                  }}
+                  onError={(e) => {
+                    // 画像読み込み失敗時はフォールバック絵文字を表示
+                    e.currentTarget.style.display = "none";
+                    const fallback = e.currentTarget.parentElement?.nextElementSibling;
+                    if (fallback) fallback.classList.remove("hidden");
+                  }}
+                />
+              </div>
+              {/* フォールバック絵文字（画像読み込み失敗時のみ表示） */}
+              <div className="absolute inset-0 flex items-center justify-center hidden">
                 <motion.span
                   animate={{
                     opacity: evolutionPhase === "cardify" ? [1, 0.5] : evolutionPhase === "charging" ? 0.3 : 1
@@ -520,12 +536,15 @@ export default function EnergyInvestmentModal({
                   alt={guardian.name}
                   className="w-full h-full object-contain"
                   onError={(e) => {
+                    // 画像読み込み失敗時はフォールバック絵文字を表示
                     e.currentTarget.style.display = "none";
+                    const fallback = e.currentTarget.parentElement?.nextElementSibling;
+                    if (fallback) fallback.classList.remove("hidden");
                   }}
                 />
               </div>
-              {/* フォールバック絵文字 */}
-              <div className="absolute inset-0 flex items-center justify-center">
+              {/* フォールバック絵文字（画像読み込み失敗時のみ表示） */}
+              <div className="absolute inset-0 flex items-center justify-center hidden">
                 <span className="text-8xl md:text-9xl">{oldPlaceholder.emoji}</span>
               </div>
               {/* 新ステージ表示 */}
