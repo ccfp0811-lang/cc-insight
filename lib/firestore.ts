@@ -886,36 +886,53 @@ export async function processReportWithEnergy(
   userId: string
 ): Promise<{ energyEarned: number; messages: string[] }> {
   try {
+    console.log("📊 processReportWithEnergy: 開始", { userId });
+
     const profile = await getUserGuardianProfile(userId);
     if (!profile) {
+      console.log("⚠️ プロファイルが見つかりません");
       return { energyEarned: 0, messages: [] };
     }
+    console.log("✅ プロファイル取得成功");
 
     const { processReportCompletion } = await import("./energy-system");
     const { recordEnergyHistory } = await import("./energy-history");
     const result = processReportCompletion(profile);
+    console.log("✅ エナジー計算完了", { totalEnergy: result.energyEarned.totalEnergy });
 
     // プロファイル更新
     profile.energy = result.newEnergyData;
     profile.streak = result.newStreakData;
 
-    await updateUserGuardianProfile(userId, profile);
+    try {
+      await updateUserGuardianProfile(userId, profile);
+      console.log("✅ プロファイル更新成功");
+    } catch (profileError) {
+      console.error("❌ プロファイル更新エラー:", profileError);
+      throw profileError;
+    }
 
     // エナジー履歴を記録（成長の記録用）
     const today = new Date().toISOString().split('T')[0];
-    await recordEnergyHistory(
-      userId,
-      today,
-      result.historyData.breakdown,
-      result.historyData.streakDay
-    );
+    try {
+      await recordEnergyHistory(
+        userId,
+        today,
+        result.historyData.breakdown,
+        result.historyData.streakDay
+      );
+      console.log("✅ エナジー履歴記録成功");
+    } catch (historyError) {
+      console.error("❌ エナジー履歴記録エラー:", historyError);
+      // 履歴記録に失敗してもエナジー自体は獲得済みなので続行
+    }
 
     return {
       energyEarned: result.energyEarned.totalEnergy,
       messages: result.messages
     };
   } catch (error) {
-    console.error("Error processing report:", error);
+    console.error("❌ Error processing report:", error);
     return { energyEarned: 0, messages: [] };
   }
 }
