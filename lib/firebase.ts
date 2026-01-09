@@ -33,4 +33,19 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// App Check初期化（クライアントサイドのみ）
+if (typeof window !== "undefined") {
+  import("firebase/app-check").then(({ initializeAppCheck, ReCaptchaV3Provider }) => {
+    // Vercel環境変数 NEXT_PUBLIC_RECAPTCHA_SITE_KEY が設定されている場合のみ有効化
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    if (siteKey) {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(siteKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+      console.log("🛡️ App Check initialized");
+    }
+  });
+}
+
 export { app, auth, db };

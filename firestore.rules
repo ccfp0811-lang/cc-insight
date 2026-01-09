@@ -176,6 +176,53 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // invitations collection
+    match /invitations/{invitationId} {
+      // 読み取り: 誰でも可能（登録時の検証用）
+      allow read: if true;
+
+      // 作成・削除: 管理者のみ
+      allow create, delete: if isAdmin();
+
+      // 更新: 認証済みユーザー（使用済みフラグ更新）または管理者
+      allow update: if isAuthenticated() || isAdmin();
+    }
+
+    // judgment_history collection
+    match /judgment_history/{historyId} {
+      // 読み取り: 管理者のみ
+      allow read: if isAdmin();
+
+      // 作成: サーバーサイド（管理者SDK推奨だが、現状はAPIルートからの書き込みを許可するため一旦全許可は危険）
+      // TODO: Firebase Admin SDKへの移行を推奨
+      // 現状はAPIルートからの書き込みを許可するため、認証済みユーザーなら作成可能とする（Cron実行用アカウントが必要）
+      allow create: if true; // ⚠️ 一時的: Cronからの書き込みを許可するため（本来はAdmin SDKを使うべき）
+      
+      // 更新・削除: 管理者のみ
+      allow update, delete: if isAdmin();
+    }
+
+    // team_goals collection
+    match /team_goals/{goalId} {
+      // 読み取り: 誰でも可能（目標表示用）
+      allow read: if true;
+
+      // 書き込み: 管理者のみ
+      allow write: if isAdmin();
+    }
+
+    // dailyLogins collection（デイリーログインボーナス）
+    match /dailyLogins/{userId} {
+      // 読み取り: 自分のデータまたは管理者
+      allow read: if isOwner(userId) || isAdmin();
+
+      // 作成・更新: 自分のデータのみ
+      allow create, update: if isOwner(userId);
+
+      // 削除: 管理者のみ
+      allow delete: if isAdmin();
+    }
+
     // その他のコレクションはデフォルトで禁止
     match /{document=**} {
       allow read, write: if false;

@@ -10,6 +10,8 @@ import { NextResponse } from "next/server";
 import { executeDecadeJudgment } from "@/lib/adapt-cycle";
 import { getCurrentDecade } from "@/lib/team-config";
 import { notifyDecadeJudgmentToCEO, notifyDecadeJudgmentToAdminChannel } from "@/lib/slack-notifier";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export async function GET(request: Request) {
   try {
@@ -29,29 +31,36 @@ export async function GET(request: Request) {
     }
 
     console.log("🎯 ADAPT判定Cron実行開始...");
-    
+
     // 現在のデカードを取得（前日基準）
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const decade = getCurrentDecade(yesterday);
-    
+
     console.log(`📊 ${decade === 1 ? "10日" : "20日"}時点の判定を実行...`);
-    
+
     // 判定実行
     const judgments = await executeDecadeJudgment(decade);
-    
+
     console.log(`✅ 判定完了: ${judgments.length}チーム`);
-    
+
     // Slack通知
     await Promise.all([
       notifyDecadeJudgmentToCEO(judgments, decade),
       notifyDecadeJudgmentToAdminChannel(judgments, decade),
     ]);
-    
+
     console.log("🎯 Slack通知送信完了");
-    
-    // TODO: Firestoreに判定結果を保存
-    
+
+    // Firestoreに判定結果を保存
+    const historyRef = collection(db, "judgment_history");
+    await Promise.all(judgments.map(async (judgment) => {
+      await addDoc(historyRef, {
+        ...judgment,
+        createdAt: serverTimestamp()
+      });
+    }));
+
     return NextResponse.json({
       success: true,
       decade,
@@ -60,7 +69,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("❌ ADAPT判定Cronエラー:", error);
-    
+
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),

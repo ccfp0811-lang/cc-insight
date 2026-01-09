@@ -11,11 +11,13 @@
 
 import { getReportsByPeriod, Report } from "./firestore";
 import { getCurrentDecade, isWeeklyTeam, isDailyTeam, getTeamConfig } from "./team-config";
-import { 
-  aggregateMetrics, 
-  getTeamSchema, 
-  calculateTotalContributionPoints 
+import {
+  aggregateMetrics,
+  getTeamSchema,
+  calculateTotalContributionPoints
 } from "./report-schema";
+import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 export type DecadePeriod = 1 | 2 | 3; // 1=1-10日, 2=11-20日, 3=21-末日
 export type JudgmentStatus = "excellent" | "on_track" | "needs_attention" | "critical";
@@ -27,24 +29,24 @@ export interface DecadeJudgment {
   teamName: string;
   decade: DecadePeriod;
   judgedAt: Date;
-  
+
   // 実績
   actualValue: number;           // 実際の累計値
   actualProgress: number;         // 実際の進捗率（%）
-  
+
   // 理想
   idealProgress: number;          // 理想進捗率（33% / 66% / 100%）
   idealValue: number;             // 理想値
-  
+
   // 判定
   gap: number;                    // 乖離（実績 - 理想）
   gapPercentage: number;          // 乖離率（%）
   status: JudgmentStatus;         // ステータス
-  
+
   // 目標
   currentMonthlyGoal: number;     // 現在の月間目標
   recommendedGoal?: number;       // 推奨目標（再設定の場合）
-  
+
   // リーダー対応
   leaderResponse?: {
     respondedAt: Date;
@@ -53,7 +55,7 @@ export interface DecadeJudgment {
     reason: string;
     respondedBy: string;          // リーダーのUID
   };
-  
+
   // 24時間無反応フラグ
   escalated: boolean;
   escalatedAt?: Date;
@@ -86,50 +88,51 @@ export async function executeDecadeJudgment(
   referenceDate: Date = new Date()
 ): Promise<DecadeJudgment[]> {
   const judgments: DecadeJudgment[] = [];
-  
+
   // 今月の全レポートを取得
   const reports = await getReportsByPeriod("month");
-  
+
   // 月初からデカード終了日までのレポートに絞り込み
   const decadeEndDay = decade === 1 ? 10 : decade === 2 ? 20 : 31;
   const filteredReports = reports.filter(r => {
     const reportDate = new Date(r.date);
     return reportDate.getDate() <= decadeEndDay;
   });
-  
+
   // チーム別に集計
   const teamIds = ["fukugyou", "taishoku", "buppan"];
-  
+
   for (const teamId of teamIds) {
     const teamConfig = getTeamConfig(teamId);
     if (!teamConfig) continue;
-    
+
     const teamReports = filteredReports.filter(r => r.team === teamId);
-    
+
     // 実績値を計算（貢献ポイント換算）
     const actualValue = calculateTotalContributionPoints(teamReports, teamId);
-    
+
     // 理想進捗率
     const idealProgress = IDEAL_PROGRESS[decade];
-    
-    // 月間目標を取得（仮で10000pt、実際はFirestoreから取得）
-    const currentMonthlyGoal = 10000; // TODO: Firestoreから取得
-    
+
+    // 月間目標を取得
+    const today = new Date();
+    const currentMonthlyGoal = await getMonthlyGoal(teamId, today.getFullYear(), today.getMonth() + 1);
+
     // 理想値を計算
     const idealValue = Math.round((currentMonthlyGoal * idealProgress) / 100);
-    
+
     // 実際の進捗率を計算
-    const actualProgress = currentMonthlyGoal > 0 
+    const actualProgress = currentMonthlyGoal > 0
       ? Math.round((actualValue / currentMonthlyGoal) * 100)
       : 0;
-    
+
     // 乖離を計算
     const gap = actualValue - idealValue;
     const gapPercentage = Math.round(actualProgress - idealProgress);
-    
+
     // ステータス判定
     const status = determineStatus(gapPercentage);
-    
+
     // 推奨目標を計算（critical/needs_attentionの場合）
     let recommendedGoal: number | undefined;
     if (status === "critical" || status === "needs_attention") {
@@ -141,11 +144,11 @@ export async function executeDecadeJudgment(
         0
       ).getDate();
       const projectedMonthlyValue = Math.round((actualValue / daysInDecade) * daysInMonth);
-      
+
       // 予測値の80%を推奨目標として設定（現実的な目標）
       recommendedGoal = Math.round(projectedMonthlyValue * 0.8);
     }
-    
+
     judgments.push({
       teamId,
       teamName: teamConfig.name,
@@ -163,7 +166,7 @@ export async function executeDecadeJudgment(
       escalated: false,
     });
   }
-  
+
   return judgments;
 }
 
@@ -178,40 +181,40 @@ export function calculateWeeklyTeamProgress(
 ): number {
   // 週次報告の場合、報告日から次の報告日までの期間を
   // 日割りで按分して累計する
-  
-  const sorted = [...reports].sort((a, b) => 
+
+  const sorted = [...reports].sort((a, b) =>
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
-  
+
   let totalValue = 0;
-  
+
   for (let i = 0; i < sorted.length; i++) {
     const report = sorted[i];
     const reportDate = new Date(report.date);
-    
+
     // ターゲット日より後の報告は除外
     if (reportDate > targetDate) break;
-    
+
     // 貢献ポイントを計算
     const points = calculateTotalContributionPoints([report], teamId);
-    
+
     // 次の報告日までの日数を取得
     const nextReport = sorted[i + 1];
     const nextReportDate = nextReport ? new Date(nextReport.date) : targetDate;
-    
+
     // 報告日からターゲット日までの日数
     const daysFromReport = Math.min(
       Math.floor((targetDate.getTime() - reportDate.getTime()) / (1000 * 60 * 60 * 24)),
       7 // 最大7日
     );
-    
+
     // 1週間（7日）で按分
     const dailyValue = points / 7;
     const proportionalValue = dailyValue * daysFromReport;
-    
+
     totalValue += proportionalValue;
   }
-  
+
   return Math.round(totalValue);
 }
 
@@ -256,10 +259,10 @@ export function recordLeaderResponse(
  */
 export function checkEscalation(judgment: DecadeJudgment): boolean {
   if (judgment.leaderResponse) return false; // すでに対応済み
-  
+
   const now = new Date();
   const hoursSinceJudgment = (now.getTime() - judgment.judgedAt.getTime()) / (1000 * 60 * 60);
-  
+
   return hoursSinceJudgment >= 24;
 }
 
@@ -280,21 +283,21 @@ export function getRecommendedAction(status: JudgmentStatus): {
         message: "素晴らしいペースです！この調子で目標達成を目指しましょう💪",
         urgency: "low",
       };
-    
+
     case "on_track":
       return {
         action: "maintain",
         message: "順調です！引き続き報告を継続してください✨",
         urgency: "low",
       };
-    
+
     case "needs_attention":
       return {
         action: "increase",
         message: "ペースアップが必要です。メンバーと対策を話し合いましょう",
         urgency: "medium",
       };
-    
+
     case "critical":
       return {
         action: "decrease",
@@ -373,30 +376,30 @@ export function analyzeJudgmentTrend(
   const improvingTeams: string[] = [];
   const decliningTeams: string[] = [];
   const stableTeams: string[] = [];
-  
+
   // チーム別にグループ化
   const byTeam: { [teamId: string]: DecadeJudgment[] } = {};
   judgments.forEach(j => {
     if (!byTeam[j.teamId]) byTeam[j.teamId] = [];
     byTeam[j.teamId].push(j);
   });
-  
+
   // 各チームの傾向を分析
   Object.entries(byTeam).forEach(([teamId, teamJudgments]) => {
     if (teamJudgments.length < 2) {
       stableTeams.push(teamId);
       return;
     }
-    
+
     // 最新2つの判定を比較
-    const sorted = [...teamJudgments].sort((a, b) => 
+    const sorted = [...teamJudgments].sort((a, b) =>
       b.judgedAt.getTime() - a.judgedAt.getTime()
     );
     const latest = sorted[0];
     const previous = sorted[1];
-    
+
     const progressChange = latest.actualProgress - previous.actualProgress;
-    
+
     if (progressChange > 5) {
       improvingTeams.push(teamId);
     } else if (progressChange < -5) {
@@ -405,7 +408,7 @@ export function analyzeJudgmentTrend(
       stableTeams.push(teamId);
     }
   });
-  
+
   return { improvingTeams, decliningTeams, stableTeams };
 }
 
@@ -426,13 +429,13 @@ export function getJudgmentSummary(judgments: DecadeJudgment[]): {
   const onTrack = judgments.filter(j => j.status === "on_track").length;
   const needsAttention = judgments.filter(j => j.status === "needs_attention").length;
   const critical = judgments.filter(j => j.status === "critical").length;
-  
+
   const averageProgress = total > 0
     ? Math.round(judgments.reduce((sum, j) => sum + j.actualProgress, 0) / total)
     : 0;
-  
+
   const awaitingResponse = judgments.filter(j => !j.leaderResponse).length;
-  
+
   return {
     total,
     excellent,
@@ -464,4 +467,23 @@ export function formatValue(value: number): string {
 export function formatGap(gapPercentage: number): string {
   const sign = gapPercentage > 0 ? "+" : "";
   return `${sign}${gapPercentage}%`;
+}
+/**
+ * 月間目標を取得（Firestore: team_goals collection）
+ * document ID format: {teamId}_{year}_{month} (e.g., fukugyou_2025_1)
+ */
+async function getMonthlyGoal(teamId: string, year: number, month: number): Promise<number> {
+  try {
+    const docId = `${teamId}_${year}_${month}`;
+    const docRef = doc(db, "team_goals", docId);
+    const snapshot = await getDoc(docRef);
+
+    if (snapshot.exists()) {
+      return snapshot.data().goal || 10000;
+    }
+    return 10000; // Default fallback
+  } catch (error) {
+    console.error(`Error fetching monthly goal for ${teamId}:`, error);
+    return 10000;
+  }
 }

@@ -14,6 +14,7 @@ import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from "firebase/firest
 import { auth, db } from "./firebase";
 import { useRouter, usePathname } from "next/navigation";
 import { PageLoader } from "@/components/ui/loading-spinner";
+import { validateInvitation, markInvitationAsUsed } from "./invitations";
 
 // ユーザープロファイル型定義
 export interface UserProfile {
@@ -36,7 +37,7 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  register: (email: string, password: string, displayName: string, team: UserProfile["team"], realName: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string, team: UserProfile["team"], realName: string, invitationCode: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
         // Firestoreからプロファイル取得
         const profile = await fetchUserProfile(firebaseUser.uid);
@@ -120,14 +121,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserProfile(null);
         // 未認証で保護ルートにアクセス
-        const isProtectedRoute = [...memberRoutes, ...adminOnlyRoutes].some(route => 
+        const isProtectedRoute = [...memberRoutes, ...adminOnlyRoutes].some(route =>
           pathname.startsWith(route)
         );
         if (isProtectedRoute) {
           router.push("/login");
         }
       }
-      
+
       setLoading(false);
     });
 
@@ -136,13 +137,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 新規登録
   const register = async (
-    email: string, 
-    password: string, 
-    displayName: string, 
+    email: string,
+    password: string,
+    displayName: string,
     team: UserProfile["team"],
-    realName: string
+    realName: string,
+    invitationCode: string
   ) => {
     try {
+      // 招待コードの検証
+      const isValid = await validateInvitation(invitationCode);
+      if (!isValid) {
+        throw new Error("無効または使用済みの招待コードです");
+      }
+
       // Firebase Authでユーザー作成
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
@@ -189,6 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       auth.languageCode = 'ja';
       await sendEmailVerification(newUser);
 
+      // 招待コードを使用済みにする
+      await markInvitationAsUsed(invitationCode, newUser.uid);
+
       router.push("/verify-email");
     } catch (error) {
       console.error("Registration error:", error);
@@ -204,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // プロファイル取得
       const profile = await fetchUserProfile(loggedInUser.uid);
-      
+
       // Firestoreにユーザードキュメントが存在しない場合
       if (!profile) {
         await signOut(auth);
@@ -216,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastLoginAt: serverTimestamp(),
         emailVerified: loggedInUser.emailVerified,
       }, { merge: true });
-      
+
       if (!loggedInUser.emailVerified) {
         router.push("/verify-email");
       } else if (profile.status === "pending") {
@@ -261,15 +272,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userProfile, 
-      loading, 
-      register, 
-      login, 
-      logout, 
+    <AuthContext.Provider value={{
+      user,
+      userProfile,
+      loading,
+      register,
+      login,
+      logout,
       resendVerificationEmail,
-      refreshUserProfile 
+      refreshUserProfile
     }}>
       {children}
     </AuthContext.Provider>

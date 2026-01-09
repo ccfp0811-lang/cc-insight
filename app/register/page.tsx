@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { UserPlus, Mail, Lock, User, Users } from "lucide-react";
+import { UserPlus, Mail, Lock, User, Users, Ticket } from "lucide-react";
 import { ButtonLoader } from "@/components/ui/loading-spinner";
 
 type TeamType = "fukugyou" | "taishoku" | "buppan";
@@ -24,6 +24,7 @@ export default function RegisterPage() {
   const [realName, setRealName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<TeamType | null>(null);
+  const [invitationCode, setInvitationCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
@@ -62,7 +63,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await register(email, password, displayName, selectedTeam, realName);
+      await register(email, password, displayName, selectedTeam, realName, invitationCode);
     } catch (err: any) {
       console.error("Registration error:", err);
       if (err.code === "auth/email-already-in-use") {
@@ -203,11 +204,10 @@ export default function RegisterPage() {
                     key={team.id}
                     type="button"
                     onClick={() => setSelectedTeam(team.id)}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${
-                      selectedTeam === team.id
-                        ? "border-opacity-100 bg-opacity-20"
-                        : "border-white/10 bg-white/5 hover:bg-white/10"
-                    }`}
+                    className={`p-4 rounded-xl border-2 transition-all text-left ${selectedTeam === team.id
+                      ? "border-opacity-100 bg-opacity-20"
+                      : "border-white/10 bg-white/5 hover:bg-white/10"
+                      }`}
                     style={{
                       borderColor: selectedTeam === team.id ? team.color : undefined,
                       backgroundColor: selectedTeam === team.id ? `${team.color}20` : undefined,
@@ -226,6 +226,26 @@ export default function RegisterPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/*  Invitation Code - New Field */}
+            <div className="space-y-2">
+              <Label htmlFor="invitationCode" className="text-gray-300">
+                招待コード
+              </Label>
+              <div className="relative">
+                <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <Input
+                  id="invitationCode"
+                  type="text"
+                  placeholder="8桁のコードを入力"
+                  value={invitationCode}
+                  onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
+                  className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/20 font-mono tracking-widest"
+                  required
+                />
+              </div>
+              <p className="text-xs text-gray-500">※管理画面から発行されたコードが必要です</p>
             </div>
 
             {/* エラーメッセージ */}
