@@ -890,16 +890,26 @@ export async function processReportWithEnergy(
     if (!profile) {
       return { energyEarned: 0, messages: [] };
     }
-    
+
     const { processReportCompletion } = await import("./energy-system");
+    const { recordEnergyHistory } = await import("./energy-history");
     const result = processReportCompletion(profile);
-    
+
     // プロファイル更新
     profile.energy = result.newEnergyData;
     profile.streak = result.newStreakData;
-    
+
     await updateUserGuardianProfile(userId, profile);
-    
+
+    // エナジー履歴を記録（成長の記録用）
+    const today = new Date().toISOString().split('T')[0];
+    await recordEnergyHistory(
+      userId,
+      today,
+      result.historyData.breakdown,
+      result.historyData.streakDay
+    );
+
     return {
       energyEarned: result.energyEarned.totalEnergy,
       messages: result.messages

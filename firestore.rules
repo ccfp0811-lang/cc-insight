@@ -22,7 +22,7 @@ service cloud.firestore {
     // ヘルパー関数: 承認済みユーザーか
     function isApproved() {
       return isAuthenticated() &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true;
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == "approved";
     }
 
     // users collection
