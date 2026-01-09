@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   GUARDIANS,
   GuardianId,
   UserGuardianProfile,
   EVOLUTION_STAGES,
+  EvolutionStage,
   getEnergyToNextStage,
   getAuraLevel,
   ATTRIBUTES,
@@ -15,6 +16,15 @@ import {
 } from "@/lib/guardian-collection";
 import { investGuardianEnergy } from "@/lib/firestore";
 import { Zap, X, TrendingUp, Sparkles, Star, Heart } from "lucide-react";
+
+// 進化演出のフェーズ
+type EvolutionPhase =
+  | "idle"
+  | "cardify"      // Phase 1: カード化 + 魔法陣出現
+  | "charging"     // Phase 2: 光の収束 + 回転加速
+  | "flash"        // Phase 3: ホワイトアウト + タメ
+  | "reveal"       // Phase 4: カード裏返し + 新生
+  | "finale";      // Phase 5: フィナーレ
 
 interface EnergyInvestmentModalProps {
   guardianId: GuardianId;
@@ -76,8 +86,46 @@ export default function EnergyInvestmentModal({
   const [isInvesting, setIsInvesting] = useState(false);
   const [showEvolutionAnimation, setShowEvolutionAnimation] = useState(false);
   const [evolutionData, setEvolutionData] = useState<{ from: number; to: number } | null>(null);
+  const [evolutionPhase, setEvolutionPhase] = useState<EvolutionPhase>("idle");
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [successData, setSuccessData] = useState<{ amount: number; remaining: number | null; newInvested: number } | null>(null);
+
+  // 進化演出のフェーズ進行
+  useEffect(() => {
+    if (!showEvolutionAnimation) {
+      setEvolutionPhase("idle");
+      return;
+    }
+
+    // Phase 1: カード化 (0ms)
+    setEvolutionPhase("cardify");
+
+    // Phase 2: 光の収束 (1200ms)
+    const timer1 = setTimeout(() => setEvolutionPhase("charging"), 1200);
+
+    // Phase 3: フラッシュ (2400ms)
+    const timer2 = setTimeout(() => setEvolutionPhase("flash"), 2400);
+
+    // Phase 4: 新生の顕現 (3000ms)
+    const timer3 = setTimeout(() => setEvolutionPhase("reveal"), 3000);
+
+    // Phase 5: フィナーレ (4200ms)
+    const timer4 = setTimeout(() => setEvolutionPhase("finale"), 4200);
+
+    // 終了 (6500ms)
+    const timer5 = setTimeout(() => {
+      setShowEvolutionAnimation(false);
+      onSuccess();
+    }, 6500);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+      clearTimeout(timer5);
+    };
+  }, [showEvolutionAnimation, onSuccess]);
 
   const guardian = GUARDIANS[guardianId];
   const instance = profile.guardians[guardianId];
@@ -107,15 +155,9 @@ export default function EnergyInvestmentModal({
       
       if (result.success) {
         if (result.evolved) {
-          // 進化演出を表示
+          // 進化演出を表示（useEffectでフェーズ管理）
           setEvolutionData({ from: stage, to: result.newStage });
           setShowEvolutionAnimation(true);
-
-          // 3秒後に演出を閉じて成功コールバック
-          setTimeout(() => {
-            setShowEvolutionAnimation(false);
-            onSuccess();
-          }, 3000);
         } else {
           // 進化しなかった場合は成功演出を表示
           const newInvested = investedEnergy + investAmount;
@@ -286,90 +328,349 @@ export default function EnergyInvestmentModal({
     );
   }
 
-  // 進化演出中
+  // 進化演出中 - 神秘のカード召喚演出
   if (showEvolutionAnimation && evolutionData) {
+    const oldPlaceholder = getPlaceholderStyle(guardianId);
+    const newStageImage = getGuardianImagePath(guardianId, evolutionData.to as EvolutionStage);
+
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
+      <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999] overflow-hidden">
+        {/* 背景の暗転グラデーション */}
         <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", damping: 15 }}
-          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: evolutionPhase === "flash" ? 0 : 1 }}
+          className="absolute inset-0 bg-gradient-to-b from-slate-950 via-purple-950/50 to-slate-950"
+        />
+
+        {/* Phase 3: ホワイトアウトフラッシュ */}
+        <AnimatePresence>
+          {evolutionPhase === "flash" && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 1, 1, 0] }}
+              transition={{ duration: 0.6, times: [0, 0.1, 0.7, 1] }}
+              className="absolute inset-0 bg-white z-50"
+            />
+          )}
+        </AnimatePresence>
+
+        {/* 魔法陣 */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+          animate={{
+            opacity: evolutionPhase === "flash" ? 0 : evolutionPhase === "cardify" ? 0.6 : evolutionPhase === "charging" ? 1 : 0.3,
+            scale: evolutionPhase === "charging" ? 1.5 : 1,
+            rotate: evolutionPhase === "charging" ? 360 : evolutionPhase === "cardify" ? 180 : 0
+          }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+          className="absolute w-80 h-80 md:w-96 md:h-96"
         >
-          {/* 進化エフェクト */}
-          <div className="relative">
+          {/* 外側の円 */}
+          <svg viewBox="0 0 200 200" className="w-full h-full">
+            <defs>
+              <linearGradient id="magicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={attr.color} />
+                <stop offset="100%" stopColor="#fbbf24" />
+              </linearGradient>
+            </defs>
+            <circle cx="100" cy="100" r="95" fill="none" stroke="url(#magicGradient)" strokeWidth="2" opacity="0.8" />
+            <circle cx="100" cy="100" r="80" fill="none" stroke="url(#magicGradient)" strokeWidth="1" opacity="0.6" />
+            <circle cx="100" cy="100" r="65" fill="none" stroke="url(#magicGradient)" strokeWidth="1" opacity="0.4" />
+            {/* 魔法陣の模様 */}
+            {[0, 60, 120, 180, 240, 300].map((angle, i) => (
+              <line
+                key={i}
+                x1="100"
+                y1="100"
+                x2={100 + 90 * Math.cos((angle * Math.PI) / 180)}
+                y2={100 + 90 * Math.sin((angle * Math.PI) / 180)}
+                stroke="url(#magicGradient)"
+                strokeWidth="1"
+                opacity="0.5"
+              />
+            ))}
+            {/* 六芒星 */}
+            <polygon
+              points="100,15 118,60 175,60 128,90 145,145 100,115 55,145 72,90 25,60 82,60"
+              fill="none"
+              stroke="url(#magicGradient)"
+              strokeWidth="1.5"
+              opacity="0.7"
+            />
+          </svg>
+        </motion.div>
+
+        {/* Phase 2: 光の粒子収束 */}
+        {(evolutionPhase === "charging" || evolutionPhase === "cardify") && (
+          <>
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                initial={{
+                  x: (Math.random() - 0.5) * 600,
+                  y: (Math.random() - 0.5) * 600,
+                  opacity: 0,
+                  scale: 0
+                }}
+                animate={{
+                  x: 0,
+                  y: 0,
+                  opacity: evolutionPhase === "charging" ? [0, 1, 0] : 0,
+                  scale: evolutionPhase === "charging" ? [0, 1, 0] : 0
+                }}
+                transition={{
+                  duration: 1.2,
+                  delay: i * 0.05,
+                  ease: "easeIn"
+                }}
+                className="absolute z-20"
+              >
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              </motion.div>
+            ))}
+          </>
+        )}
+
+        {/* カード本体 */}
+        <div className="relative z-10" style={{ perspective: "1000px" }}>
+          <motion.div
+            initial={{ rotateY: 0, scale: 1 }}
+            animate={{
+              rotateY:
+                evolutionPhase === "cardify" ? 0 :
+                evolutionPhase === "charging" ? 1800 :
+                evolutionPhase === "flash" ? 1800 :
+                evolutionPhase === "reveal" ? 1980 :
+                evolutionPhase === "finale" ? 1980 : 0,
+              scale:
+                evolutionPhase === "cardify" ? [1, 0.95] :
+                evolutionPhase === "charging" ? 0.9 :
+                evolutionPhase === "flash" ? 0.9 :
+                evolutionPhase === "reveal" ? [0.9, 1.1, 1] :
+                evolutionPhase === "finale" ? 1 : 1,
+            }}
+            transition={{
+              rotateY: {
+                duration: evolutionPhase === "charging" ? 1.2 : evolutionPhase === "reveal" ? 0.8 : 0.5,
+                ease: evolutionPhase === "charging" ? "easeIn" : "easeOut"
+              },
+              scale: { duration: 0.5 }
+            }}
+            className="relative"
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            {/* カード表面（旧ステージ） */}
             <motion.div
               animate={{
-                scale: [1, 1.1, 1],
-                boxShadow: [
-                  `0 0 30px ${attr.color}40`,
-                  `0 0 60px ${attr.color}80`,
-                  `0 0 30px ${attr.color}40`
-                ]
+                opacity: evolutionPhase === "reveal" || evolutionPhase === "finale" ? 0 : 1
               }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-64 h-64 rounded-full flex items-center justify-center mb-8"
-              style={{ background: placeholder.background }}
+              className="w-48 h-64 md:w-56 md:h-72 rounded-2xl overflow-hidden border-4 relative"
+              style={{
+                borderColor: attr.color,
+                background: `linear-gradient(135deg, ${attr.color}20, ${attr.color}40)`,
+                boxShadow: `0 0 ${evolutionPhase === "charging" ? 60 : 30}px ${attr.color}80`,
+                backfaceVisibility: "hidden"
+              }}
             >
-              <span className="text-9xl">{placeholder.emoji}</span>
+              {/* カード内のグラデーション背景 */}
+              <div
+                className="absolute inset-0"
+                style={{ background: oldPlaceholder.background }}
+              />
+              {/* 守護神アイコン（旧） */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.span
+                  animate={{
+                    opacity: evolutionPhase === "cardify" ? [1, 0.5] : evolutionPhase === "charging" ? 0.3 : 1
+                  }}
+                  className="text-8xl md:text-9xl"
+                >
+                  {oldPlaceholder.emoji}
+                </motion.span>
+              </div>
+              {/* ステージ表示 */}
+              <div className="absolute bottom-4 left-0 right-0 text-center">
+                <span className="text-white text-sm font-bold bg-black/50 px-3 py-1 rounded-full">
+                  Stage {evolutionData.from}
+                </span>
+              </div>
             </motion.div>
 
-            {/* キラキラエフェクト */}
-            {[...Array(8)].map((_, i) => (
+            {/* カード裏面（新ステージ） */}
+            <motion.div
+              animate={{
+                opacity: evolutionPhase === "reveal" || evolutionPhase === "finale" ? 1 : 0
+              }}
+              className="absolute inset-0 w-48 h-64 md:w-56 md:h-72 rounded-2xl overflow-hidden border-4"
+              style={{
+                borderColor: "#fbbf24",
+                background: `linear-gradient(135deg, #fbbf2440, ${attr.color}60)`,
+                boxShadow: `0 0 80px #fbbf24, 0 0 120px ${attr.color}`,
+                transform: "rotateY(180deg)",
+                backfaceVisibility: "hidden"
+              }}
+            >
+              {/* 新しい守護神画像 */}
+              <div
+                className="absolute inset-0"
+                style={{ background: oldPlaceholder.background }}
+              >
+                <img
+                  src={newStageImage}
+                  alt={guardian.name}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </div>
+              {/* フォールバック絵文字 */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-8xl md:text-9xl">{oldPlaceholder.emoji}</span>
+              </div>
+              {/* 新ステージ表示 */}
+              <div className="absolute bottom-4 left-0 right-0 text-center">
+                <span className="text-yellow-400 text-sm font-bold bg-black/70 px-3 py-1 rounded-full">
+                  Stage {evolutionData.to}
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* Phase 4: 衝撃波エフェクト */}
+        <AnimatePresence>
+          {evolutionPhase === "reveal" && (
+            <>
+              {[...Array(3)].map((_, i) => (
+                <motion.div
+                  key={`shockwave-${i}`}
+                  initial={{ scale: 0.5, opacity: 0.8 }}
+                  animate={{ scale: 3, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.8, delay: i * 0.15 }}
+                  className="absolute w-64 h-64 rounded-full border-4"
+                  style={{ borderColor: attr.color }}
+                />
+              ))}
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Phase 4 & 5: 金色の紙吹雪 */}
+        {(evolutionPhase === "reveal" || evolutionPhase === "finale") && (
+          <>
+            {[...Array(30)].map((_, i) => (
               <motion.div
-                key={i}
+                key={`confetti-${i}`}
+                initial={{
+                  y: -20,
+                  x: (Math.random() - 0.5) * 400,
+                  rotate: 0,
+                  opacity: 1
+                }}
+                animate={{
+                  y: 500,
+                  x: (Math.random() - 0.5) * 600,
+                  rotate: Math.random() * 720,
+                  opacity: [1, 1, 0]
+                }}
+                transition={{
+                  duration: 2 + Math.random(),
+                  delay: Math.random() * 0.5,
+                  ease: "easeOut"
+                }}
+                className="absolute top-0"
+                style={{
+                  width: 8 + Math.random() * 8,
+                  height: 8 + Math.random() * 8,
+                  background: i % 3 === 0 ? "#fbbf24" : i % 3 === 1 ? attr.color : "#fff",
+                  borderRadius: Math.random() > 0.5 ? "50%" : "2px"
+                }}
+              />
+            ))}
+          </>
+        )}
+
+        {/* Phase 5: フィナーレ - テキスト表示 */}
+        <AnimatePresence>
+          {evolutionPhase === "finale" && (
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="absolute bottom-20 md:bottom-32 text-center px-4"
+            >
+              <motion.h2
+                initial={{ scale: 0.5 }}
+                animate={{ scale: [0.5, 1.2, 1] }}
+                transition={{ duration: 0.5 }}
+                className="text-4xl md:text-5xl font-bold text-white mb-4"
+              >
+                🎉 進化成功！
+              </motion.h2>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <p className="text-xl md:text-2xl text-gray-300 mb-2">
+                  {guardian.name}が
+                </p>
+                <p
+                  className="text-2xl md:text-3xl font-bold mb-2"
+                  style={{ color: attr.color }}
+                >
+                  「{EVOLUTION_STAGES[evolutionData.to].name}」
+                </p>
+                <p className="text-xl md:text-2xl text-gray-300">
+                  に進化しました！
+                </p>
+              </motion.div>
+
+              {evolutionData.to === 3 && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.6, type: "spring" }}
+                  className="mt-6 p-4 bg-gradient-to-r from-purple-900/80 to-pink-900/80 rounded-xl border border-yellow-400/50"
+                >
+                  <p className="text-yellow-400 font-bold text-lg">
+                    ✨ 特性「{guardian.ability.name}」が解放されました！
+                  </p>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* キラキラエフェクト（常時） */}
+        {evolutionPhase !== "flash" && (
+          <>
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={`sparkle-${i}`}
                 initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                animate={{
+                  opacity: [0, 1, 0],
+                  scale: [0, 1, 0]
+                }}
                 transition={{
                   duration: 1.5,
                   delay: i * 0.2,
-                  repeat: Infinity
+                  repeat: Infinity,
+                  repeatDelay: Math.random()
                 }}
                 className="absolute"
                 style={{
-                  top: `${Math.random() * 100}%`,
-                  left: `${Math.random() * 100}%`
+                  top: `${10 + Math.random() * 80}%`,
+                  left: `${10 + Math.random() * 80}%`
                 }}
               >
-                <Sparkles className="text-yellow-400 w-8 h-8" />
+                <Sparkles className="w-6 h-6 text-yellow-400" />
               </motion.div>
             ))}
-          </div>
-
-          {/* 進化メッセージ */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-white"
-          >
-            <h2 className="text-4xl font-bold mb-4">
-              🎉 進化成功！
-            </h2>
-            <p className="text-2xl mb-2">
-              {guardian.name}が
-            </p>
-            <p className="text-3xl font-bold mb-2" style={{ color: attr.color }}>
-              「{EVOLUTION_STAGES[evolutionData.to].name}」
-            </p>
-            <p className="text-2xl">
-              に進化しました！
-            </p>
-
-            {evolutionData.to === 3 && (
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="mt-6 p-4 bg-purple-900/50 rounded-lg"
-              >
-                <p className="text-yellow-400 font-bold">
-                  ✨ 特性「{guardian.ability.name}」が解放されました！
-                </p>
-              </motion.div>
-            )}
-          </motion.div>
-        </motion.div>
+          </>
+        )}
       </div>
     );
   }
