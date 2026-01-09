@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   GUARDIANS,
   GuardianId,
@@ -13,7 +14,7 @@ import {
   getGuardianImagePath
 } from "@/lib/guardian-collection";
 import { investGuardianEnergy } from "@/lib/firestore";
-import { Zap, X, TrendingUp, Sparkles } from "lucide-react";
+import { Zap, X, TrendingUp, Sparkles, Star, Heart } from "lucide-react";
 
 interface EnergyInvestmentModalProps {
   guardianId: GuardianId;
@@ -21,6 +22,47 @@ interface EnergyInvestmentModalProps {
   userId: string;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+// 投資成功時のメッセージを生成
+function getSuccessMessage(amount: number, remaining: number | null, guardianName: string): { title: string; message: string; emoji: string } {
+  if (remaining !== null && remaining <= 0) {
+    return {
+      title: "進化準備完了！",
+      message: `${guardianName}が進化の光に包まれています...`,
+      emoji: "✨"
+    };
+  }
+
+  if (amount >= 100) {
+    return {
+      title: "大量投資！",
+      message: `${guardianName}が力強く輝いています！`,
+      emoji: "🔥"
+    };
+  }
+
+  if (amount >= 50) {
+    return {
+      title: "素晴らしい投資！",
+      message: `${guardianName}が喜んでいます！`,
+      emoji: "💫"
+    };
+  }
+
+  if (remaining !== null && remaining <= 50) {
+    return {
+      title: "あと少し！",
+      message: `進化まであと${remaining}E！`,
+      emoji: "🌟"
+    };
+  }
+
+  return {
+    title: "エナジー注入成功！",
+    message: `${guardianName}が成長しています`,
+    emoji: "💎"
+  };
 }
 
 export default function EnergyInvestmentModal({
@@ -34,6 +76,8 @@ export default function EnergyInvestmentModal({
   const [isInvesting, setIsInvesting] = useState(false);
   const [showEvolutionAnimation, setShowEvolutionAnimation] = useState(false);
   const [evolutionData, setEvolutionData] = useState<{ from: number; to: number } | null>(null);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [successData, setSuccessData] = useState<{ amount: number; remaining: number | null; newInvested: number } | null>(null);
 
   const guardian = GUARDIANS[guardianId];
   const instance = profile.guardians[guardianId];
@@ -66,16 +110,28 @@ export default function EnergyInvestmentModal({
           // 進化演出を表示
           setEvolutionData({ from: stage, to: result.newStage });
           setShowEvolutionAnimation(true);
-          
+
           // 3秒後に演出を閉じて成功コールバック
           setTimeout(() => {
             setShowEvolutionAnimation(false);
             onSuccess();
           }, 3000);
         } else {
-          // 進化しなかった場合は即座に更新
-          alert(result.message);
-          onSuccess();
+          // 進化しなかった場合は成功演出を表示
+          const newInvested = investedEnergy + investAmount;
+          const newNextStageInfo = getEnergyToNextStage(newInvested, guardianId);
+          setSuccessData({
+            amount: investAmount,
+            remaining: newNextStageInfo?.remaining ?? null,
+            newInvested
+          });
+          setShowSuccessAnimation(true);
+
+          // 2.5秒後に演出を閉じて成功コールバック
+          setTimeout(() => {
+            setShowSuccessAnimation(false);
+            onSuccess();
+          }, 2500);
         }
       } else {
         alert(result.message);
@@ -88,38 +144,205 @@ export default function EnergyInvestmentModal({
     }
   }
 
+  // 投資成功演出（進化なし）
+  if (showSuccessAnimation && successData) {
+    const successMsg = getSuccessMessage(successData.amount, successData.remaining, guardian.name);
+
+    return (
+      <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[9999]">
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 15, stiffness: 300 }}
+          className="text-center px-8"
+        >
+          {/* エナジー吸収エフェクト */}
+          <div className="relative mb-8">
+            {/* 背景のグロー */}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1.2, opacity: 0.5 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0 rounded-full blur-3xl"
+              style={{ background: `radial-gradient(circle, ${attr.color}40, transparent)` }}
+            />
+
+            {/* 守護神アイコン */}
+            <motion.div
+              initial={{ scale: 0.5 }}
+              animate={{ scale: [0.5, 1.1, 1] }}
+              transition={{ duration: 0.6, times: [0, 0.6, 1] }}
+              className="w-40 h-40 mx-auto rounded-full flex items-center justify-center relative"
+              style={{ background: placeholder.background }}
+            >
+              <span className="text-7xl">{placeholder.emoji}</span>
+
+              {/* エナジー粒子 */}
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{
+                    x: (Math.random() - 0.5) * 200,
+                    y: (Math.random() - 0.5) * 200,
+                    opacity: 1,
+                    scale: 1
+                  }}
+                  animate={{
+                    x: 0,
+                    y: 0,
+                    opacity: 0,
+                    scale: 0
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    delay: i * 0.05,
+                    ease: "easeIn"
+                  }}
+                  className="absolute"
+                >
+                  <Zap className="w-6 h-6 text-yellow-400" />
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* キラキラエフェクト */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
+                transition={{
+                  duration: 1.5,
+                  delay: 0.3 + i * 0.15,
+                  repeat: 1,
+                  repeatDelay: 0.5
+                }}
+                className="absolute"
+                style={{
+                  top: `${20 + Math.random() * 60}%`,
+                  left: `${20 + Math.random() * 60}%`
+                }}
+              >
+                <Star className="w-6 h-6 text-yellow-300 fill-yellow-300" />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* 投資額表示 */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mb-6"
+          >
+            <p className="text-6xl font-bold text-yellow-400 mb-2">
+              +{successData.amount}E
+            </p>
+            <p className="text-xl text-gray-300">
+              注入完了！
+            </p>
+          </motion.div>
+
+          {/* メッセージ */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mb-6"
+          >
+            <p className="text-5xl mb-3">{successMsg.emoji}</p>
+            <h2 className="text-3xl font-bold text-white mb-2">
+              {successMsg.title}
+            </h2>
+            <p className="text-xl text-gray-300">
+              {successMsg.message}
+            </p>
+          </motion.div>
+
+          {/* プログレスバー */}
+          {successData.remaining !== null && successData.remaining > 0 && (
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="max-w-xs mx-auto"
+            >
+              <div className="flex justify-between text-sm text-gray-400 mb-2">
+                <span>次の進化まで</span>
+                <span className="text-yellow-400 font-bold">あと {successData.remaining}E</span>
+              </div>
+              <div className="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.min(100, ((successData.newInvested) / (successData.newInvested + successData.remaining)) * 100)}%` }}
+                  transition={{ delay: 0.8, duration: 0.8, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                />
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
+
   // 進化演出中
   if (showEvolutionAnimation && evolutionData) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
-        <div className="text-center">
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 15 }}
+          className="text-center"
+        >
           {/* 進化エフェクト */}
           <div className="relative">
-            <div 
-              className="w-64 h-64 rounded-full flex items-center justify-center evolution-pulse aura-glow mb-8"
+            <motion.div
+              animate={{
+                scale: [1, 1.1, 1],
+                boxShadow: [
+                  `0 0 30px ${attr.color}40`,
+                  `0 0 60px ${attr.color}80`,
+                  `0 0 30px ${attr.color}40`
+                ]
+              }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="w-64 h-64 rounded-full flex items-center justify-center mb-8"
               style={{ background: placeholder.background }}
             >
               <span className="text-9xl">{placeholder.emoji}</span>
-            </div>
-            
+            </motion.div>
+
             {/* キラキラエフェクト */}
             {[...Array(8)].map((_, i) => (
-              <div
+              <motion.div
                 key={i}
-                className="absolute sparkle"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: [0, 1, 0], scale: [0, 1, 0] }}
+                transition={{
+                  duration: 1.5,
+                  delay: i * 0.2,
+                  repeat: Infinity
+                }}
+                className="absolute"
                 style={{
                   top: `${Math.random() * 100}%`,
-                  left: `${Math.random() * 100}%`,
-                  animationDelay: `${i * 0.2}s`
+                  left: `${Math.random() * 100}%`
                 }}
               >
                 <Sparkles className="text-yellow-400 w-8 h-8" />
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* 進化メッセージ */}
-          <div className="text-white">
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-white"
+          >
             <h2 className="text-4xl font-bold mb-4">
               🎉 進化成功！
             </h2>
@@ -132,16 +355,21 @@ export default function EnergyInvestmentModal({
             <p className="text-2xl">
               に進化しました！
             </p>
-            
+
             {evolutionData.to === 3 && (
-              <div className="mt-6 p-4 bg-purple-900/50 rounded-lg">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="mt-6 p-4 bg-purple-900/50 rounded-lg"
+              >
                 <p className="text-yellow-400 font-bold">
                   ✨ 特性「{guardian.ability.name}」が解放されました！
                 </p>
-              </div>
+              </motion.div>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     );
   }
