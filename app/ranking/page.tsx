@@ -111,23 +111,25 @@ export default function AllTeamsRankingPage() {
   const [userRankInfo, setUserRankInfo] = useState<{ teamName: string; rank: number; totalMembers: number; color: string } | null>(null);
   const userRowRef = useRef<HTMLDivElement>(null);
 
-  // 📅 期間でフィルタリング
-  const filteredReports = reports.filter(report => {
-    const reportDate = new Date(report.date);
-    const now = new Date();
-    
-    if (period === "week") {
-      // 過去7日間
-      const weekAgo = new Date(now);
-      weekAgo.setDate(now.getDate() - 7);
-      return reportDate >= weekAgo;
-    } else {
-      // 過去30日間
-      const monthAgo = new Date(now);
-      monthAgo.setDate(now.getDate() - 30);
-      return reportDate >= monthAgo;
-    }
-  });
+  // 📅 期間でフィルタリング（useMemoでメモ化）
+  const filteredReports = useMemo(() => {
+    return reports.filter(report => {
+      const reportDate = new Date(report.date);
+      const now = new Date();
+
+      if (period === "week") {
+        // 過去7日間
+        const weekAgo = new Date(now);
+        weekAgo.setDate(now.getDate() - 7);
+        return reportDate >= weekAgo;
+      } else {
+        // 過去30日間
+        const monthAgo = new Date(now);
+        monthAgo.setDate(now.getDate() - 30);
+        return reportDate >= monthAgo;
+      }
+    });
+  }, [reports, period]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
