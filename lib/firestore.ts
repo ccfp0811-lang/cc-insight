@@ -128,21 +128,28 @@ export function getDateRange(period: string): { start: Date; end: Date } {
   return { start, end };
 }
 
-// レポートをリアルタイムで取得
+// レポートをリアルタイムで取得（過去35日分のみ - コスト最適化）
 export function subscribeToReports(
   callback: (reports: Report[]) => void,
   teamId?: string
 ) {
+  // 過去35日分のみ取得（週間・月間ランキングに必要な30日 + 余裕5日）
+  const thirtyFiveDaysAgo = new Date();
+  thirtyFiveDaysAgo.setDate(thirtyFiveDaysAgo.getDate() - 35);
+  const cutoffDate = thirtyFiveDaysAgo.toISOString().split("T")[0];
+
   let q = query(
     collection(db, "reports"),
-    orderBy("createdAt", "desc")
+    where("date", ">=", cutoffDate),
+    orderBy("date", "desc")
   );
 
   if (teamId) {
     q = query(
       collection(db, "reports"),
       where("team", "==", teamId),
-      orderBy("createdAt", "desc")
+      where("date", ">=", cutoffDate),
+      orderBy("date", "desc")
     );
   }
 
