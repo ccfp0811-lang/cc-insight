@@ -108,7 +108,6 @@ export default function AllTeamsRankingPage() {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [period, setPeriod] = useState<"week" | "month">("week");
-  const [userRankInfo, setUserRankInfo] = useState<{ teamName: string; rank: number; totalMembers: number; color: string } | null>(null);
   const userRowRef = useRef<HTMLDivElement>(null);
 
   // 📅 期間でフィルタリング（useMemoでメモ化）
@@ -197,25 +196,22 @@ export default function AllTeamsRankingPage() {
     });
   }, [filteredReports]);
 
-  // 🎯 自分の順位を計算
-  useEffect(() => {
+  // 🎯 自分の順位を計算（useMemoで依存関係を明示的に管理）
+  const userRankInfo = useMemo(() => {
     if (!user || !guardianProfiles[user.uid]) {
-      setUserRankInfo(null);
-      return;
+      return null;
     }
 
     // ユーザーのレポートを検索
-    const userReport = reports.find(r => r.userId === user.uid);
+    const userReport = filteredReports.find(r => r.userId === user.uid);
     if (!userReport) {
-      setUserRankInfo(null);
-      return;
+      return null;
     }
 
     // ユーザーが所属するチームを特定
     const userTeamData = teamStats.find(t => t.id === userReport.team);
     if (!userTeamData) {
-      setUserRankInfo(null);
-      return;
+      return null;
     }
 
     const isShorts = userTeamData.type === "shorts";
@@ -235,14 +231,16 @@ export default function AllTeamsRankingPage() {
     const userRank = sortedMembers.findIndex((m: any) => m.name === userReport.name) + 1;
 
     if (userRank > 0) {
-      setUserRankInfo({
+      return {
         teamName: userTeamData.name,
         rank: userRank,
         totalMembers: sortedMembers.length,
         color: userTeamData.color
-      });
+      };
     }
-  }, [user, reports, guardianProfiles, teamStats]);
+
+    return null;
+  }, [user, filteredReports, guardianProfiles, teamStats]);
 
   // 📍 自分の位置にスクロール
   const scrollToMyRank = () => {
